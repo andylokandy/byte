@@ -1,4 +1,4 @@
-use prelude::*;
+use {TryFromCtx, TryIntoCtx};
 
 impl<'a> TryFromCtx<'a, usize> for &'a [u8] {
     #[inline]

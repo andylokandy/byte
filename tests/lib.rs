@@ -1,6 +1,6 @@
 extern crate scroll;
 
-use scroll::prelude::*;
+use scroll::*;
 use scroll::ctx::str::StrCtx;
 
 #[test]
