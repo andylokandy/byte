@@ -1,4 +1,5 @@
 pub mod ctx;
+pub use ctx::num::{LE, BE};
 
 pub trait TryFromCtx<'a, Ctx>
     where Self: Sized

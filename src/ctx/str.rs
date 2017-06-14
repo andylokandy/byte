@@ -7,6 +7,11 @@ pub enum StrCtx {
     Length(usize),
 }
 
+pub const NULL: StrCtx = StrCtx::Delimiter(0);
+pub const SPACE: StrCtx = StrCtx::Delimiter(0x20);
+pub const RET: StrCtx = StrCtx::Delimiter(0x0a);
+pub const TAB: StrCtx = StrCtx::Delimiter(0x09);
+
 impl<'a> TryFromCtx<'a, StrCtx> for &'a str {
     #[inline]
     fn try_from_ctx(scroll: &'a [u8], ctx: StrCtx) -> Result<(Self, usize), ()> {
@@ -26,6 +31,7 @@ impl<'a> TryFromCtx<'a, StrCtx> for &'a str {
 }
 
 impl<'a> TryIntoCtx<()> for &'a str {
+    #[inline]
     fn try_into_ctx(self, scroll: &mut [u8], _ctx: ()) -> Result<usize, ()> {
         let bytes = self.as_bytes();
 
