@@ -11,58 +11,58 @@ pub trait TryIntoCtx<Ctx> {
     fn try_into_ctx(self, scroll: &mut [u8], ctx: Ctx) -> Result<usize, ()>;
 }
 
-pub trait Pread {
-    fn pread<'a, T, Ctx>(&'a self, offset: usize) -> Result<T, ()>
+pub trait Pread<'a, Ctx> {
+    fn pread<T>(&'a self, offset: usize) -> Result<T, ()>
         where T: TryFromCtx<'a, Ctx>,
               Ctx: Default
     {
         self.pread_with(offset, Default::default())
     }
 
-    fn pread_with<'a, T, Ctx>(&'a self, offset: usize, ctx: Ctx) -> Result<T, ()>
+    fn pread_with<T>(&'a self, offset: usize, ctx: Ctx) -> Result<T, ()>
         where T: TryFromCtx<'a, Ctx>;
 
-    fn gread<'a, T, Ctx>(&'a self, offset: &mut usize) -> Result<T, ()>
+    fn gread<T>(&'a self, offset: &mut usize) -> Result<T, ()>
         where T: TryFromCtx<'a, Ctx>,
               Ctx: Default
     {
         self.gread_with(offset, Default::default())
     }
 
-    fn gread_with<'a, T, Ctx>(&'a self, offset: &mut usize, ctx: Ctx) -> Result<T, ()>
+    fn gread_with<T>(&'a self, offset: &mut usize, ctx: Ctx) -> Result<T, ()>
         where T: TryFromCtx<'a, Ctx>;
 }
 
-pub trait Pwrite
+pub trait Pwrite<Ctx>
     where Self: Sized
 {
-    fn pwrite<T, Ctx>(self, offset: usize, t: T) -> Result<(), ()>
+    fn pwrite<T>(self, offset: usize, t: T) -> Result<(), ()>
         where T: TryIntoCtx<Ctx>,
               Ctx: Default
     {
         self.pwrite_with(offset, t, Default::default())
     }
 
-    fn pwrite_with<T, Ctx>(self, offset: usize, t: T, ctx: Ctx) -> Result<(), ()>
+    fn pwrite_with<T>(self, offset: usize, t: T, ctx: Ctx) -> Result<(), ()>
         where T: TryIntoCtx<Ctx>;
 
-    fn gwrite<'a, T, Ctx>(self, offset: &mut usize, t: T) -> Result<(), ()>
+    fn gwrite<T>(self, offset: &mut usize, t: T) -> Result<(), ()>
         where T: TryIntoCtx<Ctx>,
               Ctx: Default
     {
         self.gwrite_with(offset, t, Default::default())
     }
 
-    fn gwrite_with<'a, T, Ctx>(self, offset: &mut usize, t: T, ctx: Ctx) -> Result<(), ()>
+    fn gwrite_with<T>(self, offset: &mut usize, t: T, ctx: Ctx) -> Result<(), ()>
         where T: TryIntoCtx<Ctx>;
 }
 
 
-impl<Slice> Pread for Slice
+impl<'a, Ctx, Slice> Pread<'a, Ctx> for Slice
     where Slice: AsRef<[u8]>
 {
     #[inline]
-    fn pread_with<'a, T, Ctx>(&'a self, offset: usize, ctx: Ctx) -> Result<T, ()>
+    fn pread_with<T>(&'a self, offset: usize, ctx: Ctx) -> Result<T, ()>
         where T: TryFromCtx<'a, Ctx>
     {
         let slice = self.as_ref();
@@ -75,7 +75,7 @@ impl<Slice> Pread for Slice
     }
 
     #[inline]
-    fn gread_with<'a, T, Ctx>(&'a self, offset: &mut usize, ctx: Ctx) -> Result<T, ()>
+    fn gread_with<T>(&'a self, offset: &mut usize, ctx: Ctx) -> Result<T, ()>
         where T: TryFromCtx<'a, Ctx>
     {
         let slice = self.as_ref();
@@ -91,10 +91,10 @@ impl<Slice> Pread for Slice
     }
 }
 
-impl<Slice> Pwrite for Slice
+impl<Ctx, Slice> Pwrite<Ctx> for Slice
     where Slice: AsMut<[u8]>
 {
-    fn pwrite_with<T, Ctx>(mut self, offset: usize, t: T, ctx: Ctx) -> Result<(), ()>
+    fn pwrite_with<T>(mut self, offset: usize, t: T, ctx: Ctx) -> Result<(), ()>
         where T: TryIntoCtx<Ctx>
     {
         let mut slice = self.as_mut();
@@ -106,7 +106,7 @@ impl<Slice> Pwrite for Slice
         TryIntoCtx::try_into_ctx(t, &mut slice[offset..], ctx).map(|_| ())
     }
 
-    fn gwrite_with<T, Ctx>(mut self, offset: &mut usize, t: T, ctx: Ctx) -> Result<(), ()>
+    fn gwrite_with<T>(mut self, offset: &mut usize, t: T, ctx: Ctx) -> Result<(), ()>
         where T: TryIntoCtx<Ctx>
     {
         let mut slice = self.as_mut();

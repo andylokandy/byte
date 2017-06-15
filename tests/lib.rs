@@ -14,15 +14,15 @@ fn test_pread_str() {
     assert_eq!(s, "abcdefghijklmno");
 
     assert!(bytes
-                .pread_with::<&str, _>(0, StrCtx::Length(27))
+                .pread_with::<&str>(0, StrCtx::Length(27))
                 .is_err());
 
     assert!(bytes
-                .pread_with::<&str, _>(27, StrCtx::Length(0))
+                .pread_with::<&str>(27, StrCtx::Length(0))
                 .is_err());
 
     assert!(bytes
-                .pread_with::<&str, _>(26, StrCtx::Length(1))
+                .pread_with::<&str>(26, StrCtx::Length(1))
                 .is_err());
 }
 
@@ -63,7 +63,7 @@ fn test_bytes() {
     assert_eq!(read, &[0xde, 0xad, 0xbe, 0xef]);
     assert_eq!(len, 4);
 
-    assert!(bytes.pread::<&[u8], _>(5).is_err());
+    assert!(bytes.pread::<&[u8]>(5).is_err());
 
     let mut bytes = [0; 5];
     let len = TryIntoCtx::try_into_ctx(read, &mut bytes, ()).unwrap();
