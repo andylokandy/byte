@@ -1,4 +1,4 @@
-use {TryFromCtx, TryIntoCtx};
+use {TryFromCtx, TryIntoCtx, Error, Result};
 use std::mem;
 
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
@@ -29,7 +29,7 @@ macro_rules! num_impl {
             #[inline]
             fn try_from_ctx(scroll: &'a [u8], endian: Endian) -> Result<(Self, usize), ()> {
                 if $size > scroll.len() {
-                    return Err(());
+                    return Err(Error::Incomplete);
                 };
 
                 let val: $ty = unsafe { *(&scroll[0] as *const _ as *const _) };
@@ -46,7 +46,7 @@ macro_rules! num_impl {
             #[inline]
             fn try_into_ctx(self, scroll: &mut [u8], endian: Endian) -> Result<usize, ()> {
                 if $size > scroll.len() {
-                    return Err(());
+                    return Err(Error::Incomplete);
                 };
 
                 let val = match endian {
