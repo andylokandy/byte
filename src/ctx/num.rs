@@ -1,4 +1,4 @@
-use {TryFromCtx, TryIntoCtx};
+use {TryFromCtx, TryIntoCtx, Error, Result};
 use std::mem;
 
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
@@ -31,7 +31,7 @@ macro_rules! num_impl {
                 let size = mem::size_of::<$ty>();
 
                 if size > scroll.len() {
-                    return Err(());
+                    return Err(Error::Incomplete);
                 };
 
                 let val: $ty = unsafe { *(&scroll[0] as *const _ as *const _) };
@@ -50,7 +50,7 @@ macro_rules! num_impl {
                 let size = mem::size_of::<$ty>();
 
                 if size > scroll.len() {
-                    return Err(());
+                    return Err(Error::Incomplete);
                 };
 
                 let val = match endian {

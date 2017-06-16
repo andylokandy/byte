@@ -1,10 +1,10 @@
-use {TryFromCtx, TryIntoCtx};
+use {TryFromCtx, TryIntoCtx, Error, Result};
 
 impl<'a> TryFromCtx<'a, ()> for bool {
     #[inline]
     fn try_from_ctx(scroll: &'a [u8], _ctx: ()) -> Result<(Self, usize), ()> {
         if 1 > scroll.len() {
-            return Err(());
+            return Err(Error::Incomplete);
         };
 
         Ok((scroll[0] != 0, 1))
@@ -15,7 +15,7 @@ impl<'a> TryIntoCtx<()> for bool {
     #[inline]
     fn try_into_ctx(self, scroll: &mut [u8], _ctx: ()) -> Result<usize, ()> {
         if 1 > scroll.len() {
-            return Err(());
+            return Err(Error::Incomplete);
         };
 
         scroll[0] = self as u8;
