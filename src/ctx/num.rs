@@ -23,14 +23,12 @@ pub const NATIVE: Endian = LE;
 pub const NATIVE: Endian = BE;
 
 macro_rules! num_impl {
-    ($ty: ty) => {
+    ($ty: ty, $size: tt) => {
 
         impl<'a> TryFromCtx<'a, Endian> for $ty {
             #[inline]
             fn try_from_ctx(scroll: &'a [u8], endian: Endian) -> Result<(Self, usize), ()> {
-                let size = mem::size_of::<$ty>();
-
-                if size > scroll.len() {
+                if $size > scroll.len() {
                     return Err(());
                 };
 
@@ -40,16 +38,14 @@ macro_rules! num_impl {
                     Endian::Little => val.to_le(),
                 };
 
-                Ok((val, size))
+                Ok((val, $size))
             }
         }
 
         impl<'a> TryIntoCtx<Endian> for $ty {
             #[inline]
             fn try_into_ctx(self, scroll: &mut [u8], endian: Endian) -> Result<usize, ()> {
-                let size = mem::size_of::<$ty>();
-
-                if size > scroll.len() {
+                if $size > scroll.len() {
                     return Err(());
                 };
 
@@ -60,23 +56,23 @@ macro_rules! num_impl {
 
                 unsafe { *(&mut scroll[0] as *mut _ as *mut _) = val };
 
-                Ok(size)
+                Ok($size)
             }
         }
 
     }
 }
 
-num_impl!(u8);
-num_impl!(u16);
-num_impl!(u32);
-num_impl!(u64);
-num_impl!(usize);
-num_impl!(i8);
-num_impl!(i16);
-num_impl!(i32);
-num_impl!(i64);
-num_impl!(isize);
+num_impl!(u8, 1);
+num_impl!(u16, 2);
+num_impl!(u32, 4);
+num_impl!(u64, 8);
+num_impl!(i8, 1);
+num_impl!(i16, 2);
+num_impl!(i32, 4);
+num_impl!(i64, 8);
+num_impl!(usize, (mem::size_of::<usize>()));
+num_impl!(isize, (mem::size_of::<isize>()));
 
 macro_rules! float_impl {
     ($ty: ty, $base: ty) => {
