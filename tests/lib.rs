@@ -13,17 +13,11 @@ fn test_pread_str() {
     let s: &str = bytes.pread_with(0, StrCtx::Length(15)).unwrap();
     assert_eq!(s, "abcdefghijklmno");
 
-    assert!(bytes
-                .pread_with::<&str>(0, StrCtx::Length(27))
-                .is_err());
+    assert!(bytes.pread_with::<&str>(0, StrCtx::Length(27)).is_err());
 
-    assert!(bytes
-                .pread_with::<&str>(27, StrCtx::Length(0))
-                .is_err());
+    assert!(bytes.pread_with::<&str>(27, StrCtx::Length(0)).is_err());
 
-    assert!(bytes
-                .pread_with::<&str>(26, StrCtx::Length(1))
-                .is_err());
+    assert!(bytes.pread_with::<&str>(26, StrCtx::Length(1)).is_err());
 }
 
 #[test]
@@ -35,6 +29,25 @@ fn test_gread_str() {
         .unwrap();
     assert_eq!(s, "hello, world!");
     assert_eq!(offset, 13);
+}
+
+#[test]
+fn test_str_delimitor_until() {
+    let bytes: &[u8] = b"hello, world!\0some_other_things";
+
+    let mut offset = 0;
+    let s: &str = bytes
+        .gread_with(&mut offset, StrCtx::DelimiterUntil(0, 20))
+        .unwrap();
+    assert_eq!(s, "hello, world!");
+    assert_eq!(offset, 13);
+
+    let mut offset = 0;
+    let s: &str = bytes
+        .gread_with(&mut offset, StrCtx::DelimiterUntil(0, 10))
+        .unwrap();
+    assert_eq!(s, "hello, wor");
+    assert_eq!(offset, 10);
 }
 
 #[test]

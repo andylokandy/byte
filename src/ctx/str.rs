@@ -4,6 +4,7 @@ use std::str;
 #[derive(Debug)]
 pub enum StrCtx {
     Delimiter(u8),
+    DelimiterUntil(u8, usize),
     Length(usize),
 }
 
@@ -17,6 +18,13 @@ impl<'a> TryFromCtx<'a, StrCtx> for &'a str {
     fn try_from_ctx(scroll: &'a [u8], ctx: StrCtx) -> Result<(Self, usize), ()> {
         let len = match ctx {
             StrCtx::Delimiter(delimiter) => scroll.iter().take_while(|c| **c != delimiter).count(),
+            StrCtx::DelimiterUntil(delimiter, len) => {
+                scroll
+                    .iter()
+                    .take_while(|c| **c != delimiter)
+                    .take(len)
+                    .count()
+            }
             StrCtx::Length(len) => len,
         };
 
