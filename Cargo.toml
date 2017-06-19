@@ -4,3 +4,7 @@ version = "0.1.0"
 authors = ["andylokandy <andyokandy@hotmail.com>"]
 
 [dependencies]
+
+[dev-dependencies]
+quickcheck = "0.3"
+byteorder = "1.0.0"

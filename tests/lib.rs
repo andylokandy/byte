@@ -1,10 +1,14 @@
+#[macro_use]
+extern crate quickcheck;
+extern crate byteorder;
 extern crate scroll;
 
+use byteorder::*;
 use scroll::*;
 use scroll::ctx::str::*;
 
 #[test]
-fn test_pread_str() {
+fn test_str_pread() {
     let bytes: &[u8] = b"hello, world!\0some_other_things";
     let s: &str = bytes.pread_with(0, StrCtx::Delimiter(NULL)).unwrap();
     assert_eq!(s, "hello, world!");
@@ -20,7 +24,7 @@ fn test_pread_str() {
 }
 
 #[test]
-fn test_gread_str() {
+fn test_str_gread() {
     let bytes: &[u8] = b"hello, world!\0some_other_things";
     let mut offset = 0;
     let s: &str = bytes
@@ -55,7 +59,7 @@ fn test_str_delimitor_until() {
 }
 
 #[test]
-fn test_pwrite_str() {
+fn test_str_pwrite() {
     let mut bytes = [0; 20];
     bytes.pwrite(0, "hello world!").unwrap();
     assert_eq!(&bytes[..12], b"hello world!" as &[u8]);
@@ -65,7 +69,7 @@ fn test_pwrite_str() {
 }
 
 #[test]
-fn test_gwrite_str() {
+fn test_str_gwrite() {
     let mut bytes = [0; 20];
     let mut offset = 0;
     bytes.gwrite(&mut offset, "hello world!").unwrap();
@@ -105,3 +109,40 @@ fn test_bool() {
     assert!(bytes[0] == 0);
     assert!(bytes[1] != 0);
 }
+
+macro_rules! test_num {
+    ($test_name: tt, $ty: ty, $byteorder_read_fn: tt, $byteorder_write_fn: tt) => {
+        quickcheck! {
+            fn $test_name (num: $ty) -> () {
+                let mut bytes = [0u8; 8];          
+                bytes.pwrite_with(0, num, LE).unwrap();
+                let result = LittleEndian::$byteorder_read_fn(&bytes);
+                assert_eq!(result, num);
+                
+                let mut bytes = [0u8; 8];          
+                LittleEndian::$byteorder_write_fn(&mut bytes, num);
+                let result: $ty = bytes.pread_with(0, LE).unwrap();
+                assert_eq!(result, num);
+
+                let mut bytes = [0u8; 8];          
+                bytes.pwrite_with(0, num, BE).unwrap();
+                let result = BigEndian::$byteorder_read_fn(&bytes);
+                assert_eq!(result, num);
+                
+                let mut bytes = [0u8; 8];          
+                BigEndian::$byteorder_write_fn(&mut bytes, num);
+                let result: $ty = bytes.pread_with(0, BE).unwrap();
+                assert_eq!(result, num);
+            }
+        }
+    }
+}
+
+test_num!(test_u16 ,u16, read_u16, write_u16);
+test_num!(test_u32 ,u32, read_u32, write_u32);
+test_num!(test_u64 ,u64, read_u64, write_u64);
+test_num!(test_i16 ,i16, read_i16, write_i16);
+test_num!(test_i32 ,i32, read_i32, write_i32);
+test_num!(test_i64 ,i64, read_i64, write_i64);
+test_num!(test_f32 ,f32, read_f32, write_f32);
+test_num!(test_f64 ,f64, read_f64, write_f64);
