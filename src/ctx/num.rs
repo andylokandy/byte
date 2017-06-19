@@ -40,7 +40,7 @@ macro_rules! num_impl {
             }
         }
 
-        impl<'a> TryIntoCtx<Endian> for $ty {
+        impl TryIntoCtx<Endian> for $ty {
             #[inline]
             fn try_into_ctx(self, scroll: &mut [u8], endian: Endian) -> Result<usize, ()> {
                 assert_len(scroll, $size)?;

@@ -84,10 +84,9 @@ fn test_bytes() {
 
     let mut write = [0; 5];
     let mut offset = 0;
-    write.gwrite_with(&mut offset, read, ()).unwrap();
-    // TryIntoCtx::try_into_ctx(read, &mut write[offset..], ());
-    // assert_eq!(write, [0xde, 0xad, 0xbe, 0xef, 0x00]);
-    // assert_eq!(offset, 4);
+    write.gwrite(&mut offset, read).unwrap();
+    assert_eq!(write, [0xde, 0xad, 0xbe, 0xef, 0x00]);
+    assert_eq!(offset, 4);
 
     assert!([0u8; 3].pwrite(0, read).is_err());
 }

@@ -19,13 +19,13 @@ pub fn assert_len<E>(scroll: &[u8], len: usize) -> Result<(), E> {
     }
 }
 
-pub trait TryFromCtx<'a, Ctx, E = ()>
+pub trait TryFromCtx<'a, Ctx = (), E = ()>
     where Self: Sized
 {
     fn try_from_ctx(scroll: &'a [u8], ctx: Ctx) -> Result<(Self, usize), E>;
 }
 
-pub trait TryIntoCtx<Ctx, E = ()> {
+pub trait TryIntoCtx<Ctx = (), E = ()> {
     fn try_into_ctx(self, scroll: &mut [u8], ctx: Ctx) -> Result<usize, E>;
 }
 

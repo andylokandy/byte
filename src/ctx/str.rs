@@ -37,7 +37,7 @@ impl<'a> TryFromCtx<'a, StrCtx, str::Utf8Error> for &'a str {
     }
 }
 
-impl<'a> TryIntoCtx<()> for &'a str {
+impl<'a> TryIntoCtx for &'a str {
     #[inline]
     fn try_into_ctx(self, scroll: &mut [u8], _ctx: ()) -> Result<usize, ()> {
         let bytes = self.as_bytes();
