@@ -1,4 +1,4 @@
-use {TryFromCtx, TryIntoCtx, Error, Result};
+use {TryFromCtx, TryIntoCtx, Result, assert_len};
 use std::mem;
 
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
@@ -28,9 +28,7 @@ macro_rules! num_impl {
         impl<'a> TryFromCtx<'a, Endian> for $ty {
             #[inline]
             fn try_from_ctx(scroll: &'a [u8], endian: Endian) -> Result<(Self, usize), ()> {
-                if $size > scroll.len() {
-                    return Err(Error::Incomplete);
-                };
+                assert_len(scroll, $size)?;
 
                 let val: $ty = unsafe { *(&scroll[0] as *const _ as *const _) };
                 let val = match endian {
@@ -45,9 +43,7 @@ macro_rules! num_impl {
         impl<'a> TryIntoCtx<Endian> for $ty {
             #[inline]
             fn try_into_ctx(self, scroll: &mut [u8], endian: Endian) -> Result<usize, ()> {
-                if $size > scroll.len() {
-                    return Err(Error::Incomplete);
-                };
+                assert_len(scroll, $size)?;
 
                 let val = match endian {
                     Endian::Big => self.to_be(),

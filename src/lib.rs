@@ -10,6 +10,15 @@ pub enum Error<E> {
     Other(E),
 }
 
+#[inline]
+pub fn assert_len<E>(scroll: &[u8], len: usize) -> Result<(), E> {
+    if scroll.len() < len {
+        Err(Error::Incomplete)
+    } else {
+        Ok(())
+    }
+}
+
 pub trait TryFromCtx<'a, Ctx, E = ()>
     where Self: Sized
 {
@@ -45,24 +54,24 @@ pub trait Pread<'a, Ctx, E> {
 pub trait Pwrite<Ctx, E>
     where Self: Sized
 {
-    fn pwrite<T>(self, offset: usize, t: T) -> Result<(), E>
+    fn pwrite<T>(&mut self, offset: usize, t: T) -> Result<(), E>
         where T: TryIntoCtx<Ctx, E>,
               Ctx: Default
     {
         self.pwrite_with(offset, t, Default::default())
     }
 
-    fn pwrite_with<T>(self, offset: usize, t: T, ctx: Ctx) -> Result<(), E>
+    fn pwrite_with<T>(&mut self, offset: usize, t: T, ctx: Ctx) -> Result<(), E>
         where T: TryIntoCtx<Ctx, E>;
 
-    fn gwrite<T>(self, offset: &mut usize, t: T) -> Result<(), E>
+    fn gwrite<T>(&mut self, offset: &mut usize, t: T) -> Result<(), E>
         where T: TryIntoCtx<Ctx, E>,
               Ctx: Default
     {
         self.gwrite_with(offset, t, Default::default())
     }
 
-    fn gwrite_with<T>(self, offset: &mut usize, t: T, ctx: Ctx) -> Result<(), E>
+    fn gwrite_with<T>(&mut self, offset: &mut usize, t: T, ctx: Ctx) -> Result<(), E>
         where T: TryIntoCtx<Ctx, E>;
 }
 
@@ -103,7 +112,7 @@ impl<'a, Ctx, E, Slice> Pread<'a, Ctx, E> for Slice
 impl<Ctx, E, Slice> Pwrite<Ctx, E> for Slice
     where Slice: AsMut<[u8]>
 {
-    fn pwrite_with<T>(mut self, offset: usize, t: T, ctx: Ctx) -> Result<(), E>
+    fn pwrite_with<T>(&mut self, offset: usize, t: T, ctx: Ctx) -> Result<(), E>
         where T: TryIntoCtx<Ctx, E>
     {
         let mut slice = self.as_mut();
@@ -115,7 +124,7 @@ impl<Ctx, E, Slice> Pwrite<Ctx, E> for Slice
         TryIntoCtx::try_into_ctx(t, &mut slice[offset..], ctx).map(|_| ())
     }
 
-    fn gwrite_with<T>(mut self, offset: &mut usize, t: T, ctx: Ctx) -> Result<(), E>
+    fn gwrite_with<T>(&mut self, offset: &mut usize, t: T, ctx: Ctx) -> Result<(), E>
         where T: TryIntoCtx<Ctx, E>
     {
         let mut slice = self.as_mut();

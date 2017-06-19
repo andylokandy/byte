@@ -1,11 +1,9 @@
-use {TryFromCtx, TryIntoCtx, Error, Result};
+use {TryFromCtx, TryIntoCtx, Result, assert_len};
 
 impl<'a> TryFromCtx<'a, usize> for &'a [u8] {
     #[inline]
     fn try_from_ctx(scroll: &'a [u8], len: usize) -> Result<(Self, usize), ()> {
-        if len > scroll.len() {
-            return Err(Error::Incomplete);
-        };
+        assert_len(scroll, len)?;
 
         Ok((&scroll[..len], len))
     }
@@ -14,9 +12,7 @@ impl<'a> TryFromCtx<'a, usize> for &'a [u8] {
 impl<'a> TryIntoCtx<()> for &'a [u8] {
     #[inline]
     fn try_into_ctx(self, scroll: &mut [u8], _ctx: ()) -> Result<usize, ()> {
-        if self.len() > scroll.len() {
-            return Err(Error::Incomplete);
-        };
+        assert_len(scroll, self.len())?;
 
         scroll[..self.len()].clone_from_slice(self);
 
