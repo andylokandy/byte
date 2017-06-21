@@ -1,27 +1,27 @@
 #![feature(test)]
 
 extern crate test;
+extern crate byteorder;
 extern crate scroll;
 
 use test::black_box;
+use byteorder::*;
 use scroll::*;
 
 #[bench]
-fn bench_pread(b: &mut test::Bencher) {
-    const NITER: i32 = 100_000;
-    b.iter(|| for _ in 1..NITER {
-               let data = black_box([1, 2]);
-               let _: u16 = black_box(data.pread_with(0, LE).unwrap());
+fn bench_byteorder(b: &mut test::Bencher) {
+    const N: u64 = 10_000;
+    b.iter(|| for _ in 1..N {
+               black_box(LittleEndian::read_u16(&[1, 2]));
            });
-    b.bytes = 2 * NITER as u64;
+    b.bytes = 2 * N;
 }
 
 #[bench]
-fn bench_try_from_ctx(b: &mut test::Bencher) {
-    const NITER: i32 = 100_000;
-    b.iter(|| for _ in 1..NITER {
-               let data: &[u8] = &black_box([1, 2]);
-               let _: u16 = black_box(u16::try_from_ctx(&data, LE).unwrap().0);
+fn bench_pread(b: &mut test::Bencher) {
+    const N: u64 = 10_000;
+    b.iter(|| for _ in 1..N {
+               black_box([1, 2].pread_with::<u16>(0, LE).unwrap());
            });
-    b.bytes = 2 * NITER as u64;
+    b.bytes = 2 * N;
 }
