@@ -10,6 +10,12 @@ pub enum Error<E> {
     Other(E),
 }
 
+impl<E> From<E> for Error<E> {
+    fn from(error: E) -> Self {
+        Error::Other(error)
+    }
+}
+
 #[inline]
 pub fn assert_len<E>(scroll: &[u8], len: usize) -> Result<(), E> {
     if scroll.len() < len {

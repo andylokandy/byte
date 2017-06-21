@@ -1,4 +1,4 @@
-use {TryFromCtx, TryIntoCtx, Error, Result, assert_len};
+use {TryFromCtx, TryIntoCtx, Result, assert_len};
 use std::str;
 
 #[derive(Debug)]
@@ -33,7 +33,7 @@ impl<'a> TryFromCtx<'a, StrCtx, str::Utf8Error> for &'a str {
 
         str::from_utf8(&scroll[..len])
             .map(|s| (s, len))
-            .map_err(Error::Other)
+            .map_err(Into::into)
     }
 }
 
