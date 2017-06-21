@@ -1,4 +1,4 @@
-use {TryFromCtx, TryIntoCtx, Result, assert_len};
+use {TryFromCtx, TryIntoCtx, Error, Result, assert_len};
 use std::str;
 
 #[derive(Debug)]
@@ -17,19 +17,26 @@ impl<'a> TryFromCtx<'a, StrCtx, str::Utf8Error> for &'a str {
     #[inline]
     fn try_from_ctx(scroll: &'a [u8], ctx: StrCtx) -> Result<(Self, usize), str::Utf8Error> {
         let len = match ctx {
-            StrCtx::Length(len) => len,
-            StrCtx::Delimiter(delimiter) => scroll.iter().take_while(|c| **c != delimiter).count(),
-            StrCtx::DelimiterUntil(delimiter, len) => {
+            StrCtx::Length(len) => {
                 assert_len(scroll, len)?;
+                len
+            }
+            StrCtx::Delimiter(delimiter) => {
                 scroll
                     .iter()
-                    .take_while(|c| **c != delimiter)
+                    .position(|c| *c == delimiter)
+                    .ok_or(Error::Incomplete)?
+            }
+            StrCtx::DelimiterUntil(delimiter, len) => {
+                let len = scroll
+                    .iter()
                     .take(len)
-                    .count()
+                    .position(|c| *c == delimiter)
+                    .unwrap_or(len);
+                assert_len(scroll, len)?;
+                len
             }
         };
-
-        assert_len(scroll, len)?;
 
         str::from_utf8(&scroll[..len])
             .map(|s| (s, len))

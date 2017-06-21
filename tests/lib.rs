@@ -10,12 +10,19 @@ use scroll::ctx::str::*;
 #[test]
 fn test_str_pread() {
     let bytes: &[u8] = b"hello, world!\0some_other_things";
-    let s: &str = bytes.pread_with(0, StrCtx::Delimiter(NULL)).unwrap();
-    assert_eq!(s, "hello, world!");
+    assert_eq!(bytes
+                   .pread_with::<&str>(0, StrCtx::Delimiter(NULL))
+                   .unwrap(),
+               "hello, world!");
+    assert!(bytes
+                .pread_with::<&str>(0, StrCtx::Delimiter(RET))
+                .is_err());
 
     let bytes: &[u8] = b"abcdefghijklmnopqrstuvwxyz";
-    let s: &str = bytes.pread_with(0, StrCtx::Length(15)).unwrap();
-    assert_eq!(s, "abcdefghijklmno");
+    assert_eq!(bytes.pread_with::<&str>(0, StrCtx::Length(15)).unwrap(),
+               "abcdefghijklmno");
+    assert_eq!(bytes.pread_with::<&str>(0, StrCtx::Length(26)).unwrap(),
+               "abcdefghijklmnopqrstuvwxyz");
 
     assert!(bytes.pread_with::<&str>(0, StrCtx::Length(26)).is_ok());
     assert!(bytes.pread_with::<&str>(0, StrCtx::Length(27)).is_err());
@@ -52,9 +59,19 @@ fn test_str_delimitor_until() {
     assert_eq!(s, "hello, wor");
     assert_eq!(offset, 10);
 
+    let mut offset = 0;
+    let s: &str = bytes
+        .gread_with(&mut offset, StrCtx::DelimiterUntil(NULL, 13))
+        .unwrap();
+    assert_eq!(s, "hello, world!");
+    assert_eq!(offset, 13);
+
     let bytes: &[u8] = b"hello, world!";
     assert!(bytes
                 .pread_with::<&str>(0, StrCtx::DelimiterUntil(NULL, 20))
+                .is_err());
+    assert!(bytes
+                .pread_with::<&str>(0, StrCtx::Delimiter(NULL))
                 .is_err());
 }
 
@@ -110,6 +127,42 @@ fn test_bool() {
     assert!(bytes[1] != 0);
 }
 
+#[test]
+fn test_padding() {
+    use scroll::ctx::padding;
+    use scroll::ctx::padding::Padding;
+
+    let bytes = b"abcde\0fghijk";
+
+    let mut offset = 0;
+    bytes
+        .gread_with::<Padding>(&mut offset, padding::Ctx::UntilByte(0))
+        .unwrap();
+    assert_eq!(offset, 6);
+
+    let mut offset = 0;
+    bytes
+        .gread_with::<Padding>(&mut offset, padding::Ctx::UntilSlice(b"fg"))
+        .unwrap();
+    assert_eq!(offset, 8);
+
+    let mut offset = 0;
+    bytes
+        .gread_with::<Padding>(&mut offset, padding::Ctx::UntilSlice(b"jk"))
+        .unwrap();
+    assert_eq!(offset, 12);
+
+    assert!(bytes
+                .pread_with::<Padding>(0, padding::Ctx::UntilByte(b"z"[0]))
+                .is_err());
+    assert!(bytes
+                .pread_with::<Padding>(0, padding::Ctx::UntilSlice(b"xyz"))
+                .is_err());
+    assert!(bytes
+                .pread_with::<Padding>(10, padding::Ctx::UntilSlice(b"jkl"))
+                .is_err());
+}
+
 macro_rules! test_num {
     ($test_name: tt, $ty: ty, $byteorder_read_fn: tt, $byteorder_write_fn: tt) => {
         quickcheck! {
@@ -138,11 +191,11 @@ macro_rules! test_num {
     }
 }
 
-test_num!(test_u16 ,u16, read_u16, write_u16);
-test_num!(test_u32 ,u32, read_u32, write_u32);
-test_num!(test_u64 ,u64, read_u64, write_u64);
-test_num!(test_i16 ,i16, read_i16, write_i16);
-test_num!(test_i32 ,i32, read_i32, write_i32);
-test_num!(test_i64 ,i64, read_i64, write_i64);
-test_num!(test_f32 ,f32, read_f32, write_f32);
-test_num!(test_f64 ,f64, read_f64, write_f64);
+test_num!(test_u16, u16, read_u16, write_u16);
+test_num!(test_u32, u32, read_u32, write_u32);
+test_num!(test_u64, u64, read_u64, write_u64);
+test_num!(test_i16, i16, read_i16, write_i16);
+test_num!(test_i32, i32, read_i32, write_i32);
+test_num!(test_i64, i64, read_i64, write_i64);
+test_num!(test_f32, f32, read_f32, write_f32);
+test_num!(test_f64, f64, read_f64, write_f64);
