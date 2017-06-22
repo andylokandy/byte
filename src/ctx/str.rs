@@ -1,4 +1,4 @@
-use {TryFromCtx, TryIntoCtx, Error, Result, assert_len};
+use {TryFromCtx, TryIntoCtx, Error, Result, check_len};
 use std::str;
 
 #[derive(Debug)]
@@ -18,14 +18,13 @@ impl<'a> TryFromCtx<'a, StrCtx, str::Utf8Error> for &'a str {
     fn try_from_ctx(scroll: &'a [u8], ctx: StrCtx) -> Result<(Self, usize), str::Utf8Error> {
         let len = match ctx {
             StrCtx::Length(len) => {
-                assert_len(scroll, len)?;
-                len
+                check_len(scroll, len)
             }
             StrCtx::Delimiter(delimiter) => {
                 scroll
                     .iter()
                     .position(|c| *c == delimiter)
-                    .ok_or(Error::Incomplete)?
+                    .ok_or(Error::Incomplete)
             }
             StrCtx::DelimiterUntil(delimiter, len) => {
                 let len = scroll
@@ -33,10 +32,9 @@ impl<'a> TryFromCtx<'a, StrCtx, str::Utf8Error> for &'a str {
                     .take(len)
                     .position(|c| *c == delimiter)
                     .unwrap_or(len);
-                assert_len(scroll, len)?;
-                len
+                check_len(scroll, len)
             }
-        };
+        }?;
 
         str::from_utf8(&scroll[..len])
             .map(|s| (s, len))
@@ -49,7 +47,7 @@ impl<'a> TryIntoCtx for &'a str {
     fn try_into_ctx(self, scroll: &mut [u8], _ctx: ()) -> Result<usize, ()> {
         let bytes = self.as_bytes();
 
-        assert_len(scroll, bytes.len())?;
+        check_len(scroll, bytes.len())?;
 
         scroll[..bytes.len()].clone_from_slice(bytes);
 

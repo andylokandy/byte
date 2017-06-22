@@ -17,11 +17,11 @@ impl<E> From<E> for Error<E> {
 }
 
 #[inline]
-pub fn assert_len<E>(scroll: &[u8], len: usize) -> Result<(), E> {
+pub fn check_len<E>(scroll: &[u8], len: usize) -> Result<usize, E> {
     if scroll.len() < len {
         Err(Error::Incomplete)
     } else {
-        Ok(())
+        Ok(len)
     }
 }
 

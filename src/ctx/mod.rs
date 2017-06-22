@@ -1,5 +1,4 @@
 pub mod str;
 pub mod num;
-pub mod padding;
-mod bytes;
+pub mod bytes;
 mod bool;

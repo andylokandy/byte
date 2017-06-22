@@ -6,23 +6,22 @@ extern crate scroll;
 use byteorder::*;
 use scroll::*;
 use scroll::ctx::str::*;
+use scroll::ctx::bytes::*;
 
 #[test]
 fn test_str_pread() {
     let bytes: &[u8] = b"hello, world!\0some_other_things";
-    assert_eq!(bytes
-                   .pread_with::<&str>(0, StrCtx::Delimiter(NULL))
-                   .unwrap(),
-               "hello, world!");
+    assert_eq!(TryFromCtx::try_from_ctx(bytes, StrCtx::Delimiter(NULL)).unwrap(),
+               ("hello, world!", 13));
     assert!(bytes
                 .pread_with::<&str>(0, StrCtx::Delimiter(RET))
                 .is_err());
 
     let bytes: &[u8] = b"abcdefghijklmnopqrstuvwxyz";
-    assert_eq!(bytes.pread_with::<&str>(0, StrCtx::Length(15)).unwrap(),
-               "abcdefghijklmno");
-    assert_eq!(bytes.pread_with::<&str>(0, StrCtx::Length(26)).unwrap(),
-               "abcdefghijklmnopqrstuvwxyz");
+    assert_eq!(TryFromCtx::try_from_ctx(bytes, StrCtx::Length(15)).unwrap(),
+               ("abcdefghijklmno", 15));
+    assert_eq!(TryFromCtx::try_from_ctx(bytes, StrCtx::Length(26)).unwrap(),
+               ("abcdefghijklmnopqrstuvwxyz", 26));
 
     assert!(bytes.pread_with::<&str>(0, StrCtx::Length(26)).is_ok());
     assert!(bytes.pread_with::<&str>(0, StrCtx::Length(27)).is_err());
@@ -45,26 +44,12 @@ fn test_str_gread() {
 fn test_str_delimitor_until() {
     let bytes: &[u8] = b"hello, world!\0some_other_things";
 
-    let mut offset = 0;
-    let s: &str = bytes
-        .gread_with(&mut offset, StrCtx::DelimiterUntil(NULL, 20))
-        .unwrap();
-    assert_eq!(s, "hello, world!");
-    assert_eq!(offset, 13);
-
-    let mut offset = 0;
-    let s: &str = bytes
-        .gread_with(&mut offset, StrCtx::DelimiterUntil(NULL, 10))
-        .unwrap();
-    assert_eq!(s, "hello, wor");
-    assert_eq!(offset, 10);
-
-    let mut offset = 0;
-    let s: &str = bytes
-        .gread_with(&mut offset, StrCtx::DelimiterUntil(NULL, 13))
-        .unwrap();
-    assert_eq!(s, "hello, world!");
-    assert_eq!(offset, 13);
+    assert_eq!(TryFromCtx::try_from_ctx(bytes, StrCtx::DelimiterUntil(NULL, 20)).unwrap(),
+               ("hello, world!", 13));
+    assert_eq!(TryFromCtx::try_from_ctx(bytes, StrCtx::DelimiterUntil(NULL, 13)).unwrap(),
+               ("hello, world!", 13));
+    assert_eq!(TryFromCtx::try_from_ctx(bytes, StrCtx::DelimiterUntil(NULL, 10)).unwrap(),
+               ("hello, wor", 10));
 
     let bytes: &[u8] = b"hello, world!";
     assert!(bytes
@@ -94,22 +79,37 @@ fn test_str_gwrite() {
     assert_eq!(&bytes[..offset], b"hello world!" as &[u8]);
 }
 
+// #[test]
+// fn test_bytes() {
+//     let bytes = [0xde, 0xad, 0xbe, 0xef];
+//     let (read, len): (&[u8], usize) = TryFromCtx::try_from_ctx(&bytes, 4).unwrap();
+//     assert_eq!(read, &[0xde, 0xad, 0xbe, 0xef]);
+//     assert_eq!(len, 4);
+
+//     assert!(bytes.pread::<&[u8]>(5).is_err());
+
+//     let mut write = [0; 5];
+//     let mut offset = 0;
+//     write.gwrite(&mut offset, read).unwrap();
+//     assert_eq!(write, [0xde, 0xad, 0xbe, 0xef, 0x00]);
+//     assert_eq!(offset, 4);
+
+//     assert!([0u8; 3].pwrite(0, read).is_err());
+// }
+
 #[test]
 fn test_bytes() {
-    let bytes = [0xde, 0xad, 0xbe, 0xef];
-    let (read, len): (&[u8], usize) = TryFromCtx::try_from_ctx(&bytes, 4).unwrap();
-    assert_eq!(read, &[0xde, 0xad, 0xbe, 0xef]);
-    assert_eq!(len, 4);
+    let bytes: &[u8] = &[0xde, 0xad, 0xbe, 0xef];
+    assert_eq!(TryFromCtx::try_from_ctx(&bytes, ByteCtx::Length(4)).unwrap(),
+               (&bytes[..], 4));
 
-    assert!(bytes.pread::<&[u8]>(5).is_err());
+    assert!(bytes.pread_with::<&[u8]>(5, ByteCtx::Length(0)).is_err());
 
     let mut write = [0; 5];
-    let mut offset = 0;
-    write.gwrite(&mut offset, read).unwrap();
-    assert_eq!(write, [0xde, 0xad, 0xbe, 0xef, 0x00]);
-    assert_eq!(offset, 4);
+    assert_eq!(TryIntoCtx::try_into_ctx(bytes, &mut write, ()).unwrap(), 4);
+    assert_eq!(&write[..4], bytes);
 
-    assert!([0u8; 3].pwrite(0, read).is_err());
+    assert!([0u8; 3].pwrite(0, bytes).is_err());
 }
 
 #[test]
@@ -128,38 +128,26 @@ fn test_bool() {
 }
 
 #[test]
-fn test_padding() {
-    use scroll::ctx::padding;
-    use scroll::ctx::padding::Padding;
+fn test_bytes_pattern() {
+    let bytes: &[u8] = b"abcde\0fghijk";
 
-    let bytes = b"abcde\0fghijk";
+    assert_eq!(TryFromCtx::try_from_ctx(bytes, ByteCtx::Pattern(b"abc")).unwrap(),
+               (&b"abc"[..], 3));
 
-    let mut offset = 0;
-    bytes
-        .gread_with::<Padding>(&mut offset, padding::Ctx::UntilByte(0))
-        .unwrap();
-    assert_eq!(offset, 6);
+    assert_eq!(TryFromCtx::try_from_ctx(bytes, ByteCtx::UntilPattern(b"fg")).unwrap(),
+               (&b"abcde\0fg"[..], 8));
 
-    let mut offset = 0;
-    bytes
-        .gread_with::<Padding>(&mut offset, padding::Ctx::UntilSlice(b"fg"))
-        .unwrap();
-    assert_eq!(offset, 8);
-
-    let mut offset = 0;
-    bytes
-        .gread_with::<Padding>(&mut offset, padding::Ctx::UntilSlice(b"jk"))
-        .unwrap();
-    assert_eq!(offset, 12);
+    assert_eq!(TryFromCtx::try_from_ctx(bytes, ByteCtx::UntilPattern(b"jk")).unwrap(),
+               (&b"abcde\0fghijk"[..], 12));
 
     assert!(bytes
-                .pread_with::<Padding>(0, padding::Ctx::UntilByte(b"z"[0]))
+                .pread_with::<&[u8]>(0, ByteCtx::Pattern(b"bcd"))
                 .is_err());
     assert!(bytes
-                .pread_with::<Padding>(0, padding::Ctx::UntilSlice(b"xyz"))
+                .pread_with::<&[u8]>(0, ByteCtx::UntilPattern(b"xyz"))
                 .is_err());
     assert!(bytes
-                .pread_with::<Padding>(10, padding::Ctx::UntilSlice(b"jkl"))
+                .pread_with::<&[u8]>(10, ByteCtx::UntilPattern(b"jkl"))
                 .is_err());
 }
 
