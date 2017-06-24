@@ -13,13 +13,11 @@ pub const SPACE: u8 = 0x20;
 pub const RET: u8 = 0x0a;
 pub const TAB: u8 = 0x09;
 
-impl<'a> TryRead<'a, StrCtx, str::Utf8Error> for &'a str {
+impl<'a> TryRead<'a, StrCtx> for &'a str {
     #[inline]
-    fn try_read(scroll: &'a [u8], ctx: StrCtx) -> Result<(Self, usize), str::Utf8Error> {
+    fn try_read(scroll: &'a [u8], ctx: StrCtx) -> Result<(Self, usize)> {
         let len = match ctx {
-            StrCtx::Length(len) => {
-                check_len(scroll, len)
-            }
+            StrCtx::Length(len) => check_len(scroll, len),
             StrCtx::Delimiter(delimiter) => {
                 scroll
                     .iter()
@@ -38,13 +36,13 @@ impl<'a> TryRead<'a, StrCtx, str::Utf8Error> for &'a str {
 
         str::from_utf8(&scroll[..len])
             .map(|s| (s, len))
-            .map_err(Into::into)
+            .map_err(|_| Error::BadInput("UTF8 Error"))
     }
 }
 
 impl<'a> TryWrite for &'a str {
     #[inline]
-    fn try_write(self, scroll: &mut [u8], _ctx: ()) -> Result<usize, ()> {
+    fn try_write(self, scroll: &mut [u8], _ctx: ()) -> Result<usize> {
         let bytes = self.as_bytes();
 
         check_len(scroll, bytes.len())?;

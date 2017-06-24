@@ -27,7 +27,7 @@ macro_rules! num_impl {
 
         impl<'a> TryRead<'a, Endian> for $ty {
             #[inline]
-            fn try_read(scroll: &'a [u8], endian: Endian) -> Result<(Self, usize), ()> {
+            fn try_read(scroll: &'a [u8], endian: Endian) -> Result<(Self, usize)> {
                 check_len(scroll, $size)?;
 
                 let val: $ty = unsafe { *(&scroll[0] as *const _ as *const _) };
@@ -42,7 +42,7 @@ macro_rules! num_impl {
 
         impl TryWrite<Endian> for $ty {
             #[inline]
-            fn try_write(self, scroll: &mut [u8], endian: Endian) -> Result<usize, ()> {
+            fn try_write(self, scroll: &mut [u8], endian: Endian) -> Result<usize> {
                 check_len(scroll, $size)?;
 
                 let val = match endian {
@@ -75,7 +75,7 @@ macro_rules! float_impl {
 
         impl<'a> TryRead<'a, Endian> for $ty {
             #[inline]
-            fn try_read(scroll: &'a [u8], endian: Endian) -> Result<(Self, usize), ()> {
+            fn try_read(scroll: &'a [u8], endian: Endian) -> Result<(Self, usize)> {
                 <$base as TryRead<'a, Endian>>::try_read(scroll, endian)
                     .map(|(val, size)| (unsafe { mem::transmute(val) }, size))
             }
@@ -83,7 +83,7 @@ macro_rules! float_impl {
 
         impl<'a> TryWrite<Endian> for $ty {
             #[inline]
-            fn try_write(self, scroll: &mut [u8], endian: Endian) -> Result<usize, ()> {
+            fn try_write(self, scroll: &mut [u8], endian: Endian) -> Result<usize> {
                 <$base as TryWrite<Endian>>::try_write(unsafe { mem::transmute(self) }, scroll, endian)
             }
         }
