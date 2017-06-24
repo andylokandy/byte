@@ -11,16 +11,16 @@ use scroll::ctx::bytes::*;
 #[test]
 fn test_str_pread() {
     let bytes: &[u8] = b"hello, world!\0some_other_things";
-    assert_eq!(TryFromCtx::try_from_ctx(bytes, StrCtx::Delimiter(NULL)).unwrap(),
+    assert_eq!(TryRead::try_read(bytes, StrCtx::Delimiter(NULL)).unwrap(),
                ("hello, world!", 13));
     assert!(bytes
                 .pread_with::<&str>(0, StrCtx::Delimiter(RET))
                 .is_err());
 
     let bytes: &[u8] = b"abcdefghijklmnopqrstuvwxyz";
-    assert_eq!(TryFromCtx::try_from_ctx(bytes, StrCtx::Length(15)).unwrap(),
+    assert_eq!(TryRead::try_read(bytes, StrCtx::Length(15)).unwrap(),
                ("abcdefghijklmno", 15));
-    assert_eq!(TryFromCtx::try_from_ctx(bytes, StrCtx::Length(26)).unwrap(),
+    assert_eq!(TryRead::try_read(bytes, StrCtx::Length(26)).unwrap(),
                ("abcdefghijklmnopqrstuvwxyz", 26));
 
     assert!(bytes.pread_with::<&str>(0, StrCtx::Length(26)).is_ok());
@@ -44,11 +44,11 @@ fn test_str_gread() {
 fn test_str_delimitor_until() {
     let bytes: &[u8] = b"hello, world!\0some_other_things";
 
-    assert_eq!(TryFromCtx::try_from_ctx(bytes, StrCtx::DelimiterUntil(NULL, 20)).unwrap(),
+    assert_eq!(TryRead::try_read(bytes, StrCtx::DelimiterUntil(NULL, 20)).unwrap(),
                ("hello, world!", 13));
-    assert_eq!(TryFromCtx::try_from_ctx(bytes, StrCtx::DelimiterUntil(NULL, 13)).unwrap(),
+    assert_eq!(TryRead::try_read(bytes, StrCtx::DelimiterUntil(NULL, 13)).unwrap(),
                ("hello, world!", 13));
-    assert_eq!(TryFromCtx::try_from_ctx(bytes, StrCtx::DelimiterUntil(NULL, 10)).unwrap(),
+    assert_eq!(TryRead::try_read(bytes, StrCtx::DelimiterUntil(NULL, 10)).unwrap(),
                ("hello, wor", 10));
 
     let bytes: &[u8] = b"hello, world!";
@@ -82,7 +82,7 @@ fn test_str_gwrite() {
 // #[test]
 // fn test_bytes() {
 //     let bytes = [0xde, 0xad, 0xbe, 0xef];
-//     let (read, len): (&[u8], usize) = TryFromCtx::try_from_ctx(&bytes, 4).unwrap();
+//     let (read, len): (&[u8], usize) = TryRead::try_read(&bytes, 4).unwrap();
 //     assert_eq!(read, &[0xde, 0xad, 0xbe, 0xef]);
 //     assert_eq!(len, 4);
 
@@ -100,13 +100,13 @@ fn test_str_gwrite() {
 #[test]
 fn test_bytes() {
     let bytes: &[u8] = &[0xde, 0xad, 0xbe, 0xef];
-    assert_eq!(TryFromCtx::try_from_ctx(&bytes, ByteCtx::Length(4)).unwrap(),
+    assert_eq!(TryRead::try_read(&bytes, ByteCtx::Length(4)).unwrap(),
                (&bytes[..], 4));
 
     assert!(bytes.pread_with::<&[u8]>(5, ByteCtx::Length(0)).is_err());
 
     let mut write = [0; 5];
-    assert_eq!(TryIntoCtx::try_into_ctx(bytes, &mut write, ()).unwrap(), 4);
+    assert_eq!(TryWrite::try_write(bytes, &mut write, ()).unwrap(), 4);
     assert_eq!(&write[..4], bytes);
 
     assert!([0u8; 3].pwrite(0, bytes).is_err());
@@ -131,13 +131,13 @@ fn test_bool() {
 fn test_bytes_pattern() {
     let bytes: &[u8] = b"abcde\0fghijk";
 
-    assert_eq!(TryFromCtx::try_from_ctx(bytes, ByteCtx::Pattern(b"abc")).unwrap(),
+    assert_eq!(TryRead::try_read(bytes, ByteCtx::Pattern(b"abc")).unwrap(),
                (&b"abc"[..], 3));
 
-    assert_eq!(TryFromCtx::try_from_ctx(bytes, ByteCtx::UntilPattern(b"fg")).unwrap(),
+    assert_eq!(TryRead::try_read(bytes, ByteCtx::UntilPattern(b"fg")).unwrap(),
                (&b"abcde\0fg"[..], 8));
 
-    assert_eq!(TryFromCtx::try_from_ctx(bytes, ByteCtx::UntilPattern(b"jk")).unwrap(),
+    assert_eq!(TryRead::try_read(bytes, ByteCtx::UntilPattern(b"jk")).unwrap(),
                (&b"abcde\0fghijk"[..], 12));
 
     assert!(bytes

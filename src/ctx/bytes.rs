@@ -1,4 +1,4 @@
-use {TryFromCtx, TryIntoCtx, Error, Result, check_len};
+use {TryRead, TryWrite, Error, Result, check_len};
 
 #[derive(Debug)]
 pub enum ByteCtx {
@@ -10,9 +10,9 @@ pub enum ByteCtx {
 #[derive(Debug)]
 pub struct Mismatch;
 
-impl<'a> TryFromCtx<'a, ByteCtx, Mismatch> for &'a [u8] {
+impl<'a> TryRead<'a, ByteCtx, Mismatch> for &'a [u8] {
     #[inline]
-    fn try_from_ctx(scroll: &'a [u8], ctx: ByteCtx) -> Result<(Self, usize), Mismatch> {
+    fn try_read(scroll: &'a [u8], ctx: ByteCtx) -> Result<(Self, usize), Mismatch> {
         let len = match ctx {
             ByteCtx::Length(len) => check_len(scroll, len),
             ByteCtx::Pattern(pattern) => {
@@ -37,9 +37,9 @@ impl<'a> TryFromCtx<'a, ByteCtx, Mismatch> for &'a [u8] {
     }
 }
 
-impl<'a> TryIntoCtx<()> for &'a [u8] {
+impl<'a> TryWrite for &'a [u8] {
     #[inline]
-    fn try_into_ctx(self, scroll: &mut [u8], _ctx: ()) -> Result<usize, ()> {
+    fn try_write(self, scroll: &mut [u8], _ctx: ()) -> Result<usize, ()> {
         check_len(scroll, self.len())?;
 
         scroll[..self.len()].clone_from_slice(self);

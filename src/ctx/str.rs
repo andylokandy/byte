@@ -1,4 +1,4 @@
-use {TryFromCtx, TryIntoCtx, Error, Result, check_len};
+use {TryRead, TryWrite, Error, Result, check_len};
 use std::str;
 
 #[derive(Debug)]
@@ -13,9 +13,9 @@ pub const SPACE: u8 = 0x20;
 pub const RET: u8 = 0x0a;
 pub const TAB: u8 = 0x09;
 
-impl<'a> TryFromCtx<'a, StrCtx, str::Utf8Error> for &'a str {
+impl<'a> TryRead<'a, StrCtx, str::Utf8Error> for &'a str {
     #[inline]
-    fn try_from_ctx(scroll: &'a [u8], ctx: StrCtx) -> Result<(Self, usize), str::Utf8Error> {
+    fn try_read(scroll: &'a [u8], ctx: StrCtx) -> Result<(Self, usize), str::Utf8Error> {
         let len = match ctx {
             StrCtx::Length(len) => {
                 check_len(scroll, len)
@@ -42,9 +42,9 @@ impl<'a> TryFromCtx<'a, StrCtx, str::Utf8Error> for &'a str {
     }
 }
 
-impl<'a> TryIntoCtx for &'a str {
+impl<'a> TryWrite for &'a str {
     #[inline]
-    fn try_into_ctx(self, scroll: &mut [u8], _ctx: ()) -> Result<usize, ()> {
+    fn try_write(self, scroll: &mut [u8], _ctx: ()) -> Result<usize, ()> {
         let bytes = self.as_bytes();
 
         check_len(scroll, bytes.len())?;

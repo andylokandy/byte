@@ -1,4 +1,4 @@
-use {TryFromCtx, TryIntoCtx, Result, check_len};
+use {TryRead, TryWrite, Result, check_len};
 use std::mem;
 
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
@@ -25,9 +25,9 @@ pub const NATIVE: Endian = BE;
 macro_rules! num_impl {
     ($ty: ty, $size: tt) => {
 
-        impl<'a> TryFromCtx<'a, Endian> for $ty {
+        impl<'a> TryRead<'a, Endian> for $ty {
             #[inline]
-            fn try_from_ctx(scroll: &'a [u8], endian: Endian) -> Result<(Self, usize), ()> {
+            fn try_read(scroll: &'a [u8], endian: Endian) -> Result<(Self, usize), ()> {
                 check_len(scroll, $size)?;
 
                 let val: $ty = unsafe { *(&scroll[0] as *const _ as *const _) };
@@ -40,9 +40,9 @@ macro_rules! num_impl {
             }
         }
 
-        impl TryIntoCtx<Endian> for $ty {
+        impl TryWrite<Endian> for $ty {
             #[inline]
-            fn try_into_ctx(self, scroll: &mut [u8], endian: Endian) -> Result<usize, ()> {
+            fn try_write(self, scroll: &mut [u8], endian: Endian) -> Result<usize, ()> {
                 check_len(scroll, $size)?;
 
                 let val = match endian {
@@ -73,18 +73,18 @@ num_impl!(isize, (mem::size_of::<isize>()));
 macro_rules! float_impl {
     ($ty: ty, $base: ty) => {
 
-        impl<'a> TryFromCtx<'a, Endian> for $ty {
+        impl<'a> TryRead<'a, Endian> for $ty {
             #[inline]
-            fn try_from_ctx(scroll: &'a [u8], endian: Endian) -> Result<(Self, usize), ()> {
-                <$base as TryFromCtx<'a, Endian>>::try_from_ctx(scroll, endian)
+            fn try_read(scroll: &'a [u8], endian: Endian) -> Result<(Self, usize), ()> {
+                <$base as TryRead<'a, Endian>>::try_read(scroll, endian)
                     .map(|(val, size)| (unsafe { mem::transmute(val) }, size))
             }
         }
 
-        impl<'a> TryIntoCtx<Endian> for $ty {
+        impl<'a> TryWrite<Endian> for $ty {
             #[inline]
-            fn try_into_ctx(self, scroll: &mut [u8], endian: Endian) -> Result<usize, ()> {
-                <$base as TryIntoCtx<Endian>>::try_into_ctx(unsafe { mem::transmute(self) }, scroll, endian)
+            fn try_write(self, scroll: &mut [u8], endian: Endian) -> Result<usize, ()> {
+                <$base as TryWrite<Endian>>::try_write(unsafe { mem::transmute(self) }, scroll, endian)
             }
         }
 
