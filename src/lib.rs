@@ -1,5 +1,6 @@
 pub mod ctx;
 pub use ctx::num::{LE, BE};
+use std::marker::PhantomData;
 
 type Result<T> = std::result::Result<T, Error>;
 
@@ -47,6 +48,10 @@ pub trait Pread<'a, Ctx> {
     }
 
     fn gread_with<T>(&'a self, offset: &mut usize, ctx: Ctx) -> Result<T> where T: TryRead<'a, Ctx>;
+
+    fn gread_iter<'i, T>(&'a self, offset: &'i mut usize, ctx: Ctx) -> Iter<'a, 'i, T, Ctx>
+        where T: TryRead<'a, Ctx>,
+              Ctx: Clone;
 }
 
 pub trait Pwrite<Ctx>
@@ -104,6 +109,18 @@ impl<'a, Ctx, Slice> Pread<'a, Ctx> for Slice
                                                           t
                                                       })
     }
+
+    fn gread_iter<'i, T>(&'a self, offset: &'i mut usize, ctx: Ctx) -> Iter<'a, 'i, T, Ctx>
+        where T: TryRead<'a, Ctx>,
+              Ctx: Clone
+    {
+        Iter {
+            scroll: self.as_ref(),
+            offset: offset,
+            ctx: ctx,
+            phantom: PhantomData,
+        }
+    }
 }
 
 impl<Ctx, Slice> Pwrite<Ctx> for Slice
@@ -134,5 +151,38 @@ impl<Ctx, Slice> Pwrite<Ctx> for Slice
                                                                    *offset += size;
                                                                    ()
                                                                })
+    }
+}
+
+#[must_use = "iterator adaptors are lazy and do nothing unless consumed"]
+pub struct Iter<'a, 'i, T, Ctx>
+    where T: TryRead<'a, Ctx>,
+          Ctx: Clone
+{
+    scroll: &'a [u8],
+    offset: &'i mut usize,
+    ctx: Ctx,
+    phantom: PhantomData<T>,
+}
+
+impl<'a, 'i, T, Ctx> Iterator for Iter<'a, 'i, T, Ctx>
+    where T: TryRead<'a, Ctx>,
+          Ctx: Clone
+{
+    type Item = T;
+
+    #[inline]
+    fn next(&mut self) -> Option<T> {
+        TryRead::try_read(&self.scroll[*self.offset..], self.ctx.clone())
+            .ok()
+            .map(|(t, size)| {
+                     *self.offset += size;
+                     t
+                 })
+    }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (0, None)
     }
 }

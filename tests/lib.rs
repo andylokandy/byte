@@ -12,7 +12,7 @@ use scroll::ctx::bytes::*;
 fn test_str_pread() {
     let bytes: &[u8] = b"hello, world!\0some_other_things";
     assert_eq!(TryRead::try_read(bytes, StrCtx::Delimiter(NULL)).unwrap(),
-               ("hello, world!", 13));
+               ("hello, world!", 14));
     assert!(bytes
                 .pread_with::<&str>(0, StrCtx::Delimiter(RET))
                 .is_err());
@@ -37,7 +37,7 @@ fn test_str_gread() {
         .gread_with(&mut offset, StrCtx::Delimiter(NULL))
         .unwrap();
     assert_eq!(s, "hello, world!");
-    assert_eq!(offset, 13);
+    assert_eq!(offset, 14);
 }
 
 #[test]
@@ -45,9 +45,9 @@ fn test_str_delimitor_until() {
     let bytes: &[u8] = b"hello, world!\0some_other_things";
 
     assert_eq!(TryRead::try_read(bytes, StrCtx::DelimiterUntil(NULL, 20)).unwrap(),
-               ("hello, world!", 13));
-    assert_eq!(TryRead::try_read(bytes, StrCtx::DelimiterUntil(NULL, 13)).unwrap(),
-               ("hello, world!", 13));
+               ("hello, world!", 14));
+    assert_eq!(TryRead::try_read(bytes, StrCtx::DelimiterUntil(NULL, 14)).unwrap(),
+               ("hello, world!", 14));
     assert_eq!(TryRead::try_read(bytes, StrCtx::DelimiterUntil(NULL, 10)).unwrap(),
                ("hello, wor", 10));
 
@@ -78,24 +78,6 @@ fn test_str_gwrite() {
     assert_eq!(offset, 12);
     assert_eq!(&bytes[..offset], b"hello world!" as &[u8]);
 }
-
-// #[test]
-// fn test_bytes() {
-//     let bytes = [0xde, 0xad, 0xbe, 0xef];
-//     let (read, len): (&[u8], usize) = TryRead::try_read(&bytes, 4).unwrap();
-//     assert_eq!(read, &[0xde, 0xad, 0xbe, 0xef]);
-//     assert_eq!(len, 4);
-
-//     assert!(bytes.pread::<&[u8]>(5).is_err());
-
-//     let mut write = [0; 5];
-//     let mut offset = 0;
-//     write.gwrite(&mut offset, read).unwrap();
-//     assert_eq!(write, [0xde, 0xad, 0xbe, 0xef, 0x00]);
-//     assert_eq!(offset, 4);
-
-//     assert!([0u8; 3].pwrite(0, read).is_err());
-// }
 
 #[test]
 fn test_bytes() {
@@ -149,6 +131,21 @@ fn test_bytes_pattern() {
     assert!(bytes
                 .pread_with::<&[u8]>(10, ByteCtx::UntilPattern(b"jkl"))
                 .is_err());
+}
+
+#[test]
+fn test_iter() {
+    let bytes: &[u8] = b"hello\0world\0dead\0beef\0more";
+    let mut offset = 0;
+    {
+        let mut iter = bytes.gread_iter(&mut offset, StrCtx::Delimiter(NULL));
+        assert_eq!(iter.next(), Some("hello"));
+        assert_eq!(iter.next(), Some("world"));
+        assert_eq!(iter.next(), Some("dead"));
+        assert_eq!(iter.next(), Some("beef"));
+        assert_eq!(iter.next(), None);
+    }
+    assert_eq!(offset, 22);
 }
 
 macro_rules! test_num {

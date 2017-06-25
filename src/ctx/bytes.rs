@@ -1,6 +1,6 @@
 use {TryRead, TryWrite, Error, Result, check_len};
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum ByteCtx {
     Length(usize),
     Pattern(&'static [u8]),
