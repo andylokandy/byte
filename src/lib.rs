@@ -30,72 +30,41 @@ pub trait TryWrite<Ctx = ()> {
     fn try_write(self, scroll: &mut [u8], ctx: Ctx) -> Result<usize>;
 }
 
-pub trait Pread<'a, Ctx> {
-    fn pread<T>(&'a self, offset: usize) -> Result<T>
+pub trait Read<'a, Ctx> {
+    fn read<T>(&'a self, offset: &mut usize) -> Result<T>
         where T: TryRead<'a, Ctx>,
               Ctx: Default
     {
-        self.pread_with(offset, Default::default())
+        self.read_with(offset, Default::default())
     }
 
-    fn pread_with<T>(&'a self, offset: usize, ctx: Ctx) -> Result<T> where T: TryRead<'a, Ctx>;
+    fn read_with<T>(&'a self, offset: &mut usize, ctx: Ctx) -> Result<T> where T: TryRead<'a, Ctx>;
 
-    fn gread<T>(&'a self, offset: &mut usize) -> Result<T>
-        where T: TryRead<'a, Ctx>,
-              Ctx: Default
-    {
-        self.gread_with(offset, Default::default())
-    }
-
-    fn gread_with<T>(&'a self, offset: &mut usize, ctx: Ctx) -> Result<T> where T: TryRead<'a, Ctx>;
-
-    fn gread_iter<'i, T>(&'a self, offset: &'i mut usize, ctx: Ctx) -> Iter<'a, 'i, T, Ctx>
+    fn read_iter<'i, T>(&'a self, offset: &'i mut usize, ctx: Ctx) -> Iter<'a, 'i, T, Ctx>
         where T: TryRead<'a, Ctx>,
               Ctx: Clone;
 }
 
-pub trait Pwrite<Ctx>
+pub trait Write<Ctx>
     where Self: Sized
 {
-    fn pwrite<T>(&mut self, offset: usize, t: T) -> Result<()>
+    fn write<T>(&mut self, offset: &mut usize, t: T) -> Result<()>
         where T: TryWrite<Ctx>,
               Ctx: Default
     {
-        self.pwrite_with(offset, t, Default::default())
+        self.write_with(offset, t, Default::default())
     }
 
-    fn pwrite_with<T>(&mut self, offset: usize, t: T, ctx: Ctx) -> Result<()> where T: TryWrite<Ctx>;
-
-    fn gwrite<T>(&mut self, offset: &mut usize, t: T) -> Result<()>
-        where T: TryWrite<Ctx>,
-              Ctx: Default
-    {
-        self.gwrite_with(offset, t, Default::default())
-    }
-
-    fn gwrite_with<T>(&mut self, offset: &mut usize, t: T, ctx: Ctx) -> Result<()>
+    fn write_with<T>(&mut self, offset: &mut usize, t: T, ctx: Ctx) -> Result<()>
         where T: TryWrite<Ctx>;
 }
 
 
-impl<'a, Ctx, Slice> Pread<'a, Ctx> for Slice
+impl<'a, Ctx, Slice> Read<'a, Ctx> for Slice
     where Slice: AsRef<[u8]>
 {
     #[inline]
-    fn pread_with<T>(&'a self, offset: usize, ctx: Ctx) -> Result<T>
-        where T: TryRead<'a, Ctx>
-    {
-        let slice = self.as_ref();
-
-        if offset >= slice.len() {
-            return Err(Error::BadOffset(offset));
-        };
-
-        TryRead::try_read(&slice[offset..], ctx).map(|(t, _)| t)
-    }
-
-    #[inline]
-    fn gread_with<T>(&'a self, offset: &mut usize, ctx: Ctx) -> Result<T>
+    fn read_with<T>(&'a self, offset: &mut usize, ctx: Ctx) -> Result<T>
         where T: TryRead<'a, Ctx>
     {
         let slice = self.as_ref();
@@ -110,7 +79,7 @@ impl<'a, Ctx, Slice> Pread<'a, Ctx> for Slice
                                                       })
     }
 
-    fn gread_iter<'i, T>(&'a self, offset: &'i mut usize, ctx: Ctx) -> Iter<'a, 'i, T, Ctx>
+    fn read_iter<'i, T>(&'a self, offset: &'i mut usize, ctx: Ctx) -> Iter<'a, 'i, T, Ctx>
         where T: TryRead<'a, Ctx>,
               Ctx: Clone
     {
@@ -123,22 +92,10 @@ impl<'a, Ctx, Slice> Pread<'a, Ctx> for Slice
     }
 }
 
-impl<Ctx, Slice> Pwrite<Ctx> for Slice
+impl<Ctx, Slice> Write<Ctx> for Slice
     where Slice: AsMut<[u8]>
 {
-    fn pwrite_with<T>(&mut self, offset: usize, t: T, ctx: Ctx) -> Result<()>
-        where T: TryWrite<Ctx>
-    {
-        let mut slice = self.as_mut();
-
-        if offset >= slice.len() {
-            return Err(Error::BadOffset(offset));
-        };
-
-        TryWrite::try_write(t, &mut slice[offset..], ctx).map(|_| ())
-    }
-
-    fn gwrite_with<T>(&mut self, offset: &mut usize, t: T, ctx: Ctx) -> Result<()>
+    fn write_with<T>(&mut self, offset: &mut usize, t: T, ctx: Ctx) -> Result<()>
         where T: TryWrite<Ctx>
     {
         let mut slice = self.as_mut();

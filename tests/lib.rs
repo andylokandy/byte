@@ -9,13 +9,20 @@ use scroll::ctx::str::*;
 use scroll::ctx::bytes::*;
 
 #[test]
-fn test_str_pread() {
+fn test_str_read() {
     let bytes: &[u8] = b"hello, world!\0some_other_things";
     assert_eq!(TryRead::try_read(bytes, StrCtx::Delimiter(NULL)).unwrap(),
                ("hello, world!", 14));
     assert!(bytes
-                .pread_with::<&str>(0, StrCtx::Delimiter(RET))
+                .read_with::<&str>(&mut 0, StrCtx::Delimiter(RET))
                 .is_err());
+
+    let mut offset = 0;
+    assert_eq!(bytes
+                   .read_with::<&str>(&mut offset, StrCtx::Delimiter(NULL))
+                   .unwrap(),
+               "hello, world!");
+    assert_eq!(offset, 14);
 
     let bytes: &[u8] = b"abcdefghijklmnopqrstuvwxyz";
     assert_eq!(TryRead::try_read(bytes, StrCtx::Length(15)).unwrap(),
@@ -23,21 +30,18 @@ fn test_str_pread() {
     assert_eq!(TryRead::try_read(bytes, StrCtx::Length(26)).unwrap(),
                ("abcdefghijklmnopqrstuvwxyz", 26));
 
-    assert!(bytes.pread_with::<&str>(0, StrCtx::Length(26)).is_ok());
-    assert!(bytes.pread_with::<&str>(0, StrCtx::Length(27)).is_err());
-    assert!(bytes.pread_with::<&str>(27, StrCtx::Length(0)).is_err());
-    assert!(bytes.pread_with::<&str>(26, StrCtx::Length(1)).is_err());
-}
-
-#[test]
-fn test_str_gread() {
-    let bytes: &[u8] = b"hello, world!\0some_other_things";
-    let mut offset = 0;
-    let s: &str = bytes
-        .gread_with(&mut offset, StrCtx::Delimiter(NULL))
-        .unwrap();
-    assert_eq!(s, "hello, world!");
-    assert_eq!(offset, 14);
+    assert!(bytes
+                .read_with::<&str>(&mut 0, StrCtx::Length(26))
+                .is_ok());
+    assert!(bytes
+                .read_with::<&str>(&mut 0, StrCtx::Length(27))
+                .is_err());
+    assert!(bytes
+                .read_with::<&str>(&mut 27, StrCtx::Length(0))
+                .is_err());
+    assert!(bytes
+                .read_with::<&str>(&mut 26, StrCtx::Length(1))
+                .is_err());
 }
 
 #[test]
@@ -53,30 +57,23 @@ fn test_str_delimitor_until() {
 
     let bytes: &[u8] = b"hello, world!";
     assert!(bytes
-                .pread_with::<&str>(0, StrCtx::DelimiterUntil(NULL, 20))
+                .read_with::<&str>(&mut 0, StrCtx::DelimiterUntil(NULL, 20))
                 .is_err());
     assert!(bytes
-                .pread_with::<&str>(0, StrCtx::Delimiter(NULL))
+                .read_with::<&str>(&mut 0, StrCtx::Delimiter(NULL))
                 .is_err());
 }
 
 #[test]
-fn test_str_pwrite() {
-    let mut bytes = [0; 20];
-    bytes.pwrite(0, "hello world!").unwrap();
-    assert_eq!(&bytes[..12], b"hello world!" as &[u8]);
-
-    let mut bytes = &mut [0; 10];
-    assert!(bytes.pwrite(0, "hello world!").is_err());
-}
-
-#[test]
-fn test_str_gwrite() {
+fn test_str_write() {
     let mut bytes = [0; 20];
     let mut offset = 0;
-    bytes.gwrite(&mut offset, "hello world!").unwrap();
+    bytes.write(&mut offset, "hello world!").unwrap();
     assert_eq!(offset, 12);
     assert_eq!(&bytes[..offset], b"hello world!" as &[u8]);
+
+    let mut bytes = &mut [0; 10];
+    assert!(bytes.write(&mut 0, "hello world!").is_err());
 }
 
 #[test]
@@ -85,26 +82,28 @@ fn test_bytes() {
     assert_eq!(TryRead::try_read(&bytes, ByteCtx::Length(4)).unwrap(),
                (&bytes[..], 4));
 
-    assert!(bytes.pread_with::<&[u8]>(5, ByteCtx::Length(0)).is_err());
+    assert!(bytes
+                .read_with::<&[u8]>(&mut 5, ByteCtx::Length(0))
+                .is_err());
 
     let mut write = [0; 5];
     assert_eq!(TryWrite::try_write(bytes, &mut write, ()).unwrap(), 4);
     assert_eq!(&write[..4], bytes);
 
-    assert!([0u8; 3].pwrite(0, bytes).is_err());
+    assert!([0u8; 3].write(&mut 0, bytes).is_err());
 }
 
 #[test]
 fn test_bool() {
     let bytes = [0x00, 0x01, 0x80, 0xff];
-    assert_eq!(bytes.pread::<bool>(0).unwrap(), false);
-    assert_eq!(bytes.pread::<bool>(1).unwrap(), true);
-    assert_eq!(bytes.pread::<bool>(2).unwrap(), true);
-    assert_eq!(bytes.pread::<bool>(3).unwrap(), true);
+    assert_eq!(bytes.read::<bool>(&mut 0).unwrap(), false);
+    assert_eq!(bytes.read::<bool>(&mut 1).unwrap(), true);
+    assert_eq!(bytes.read::<bool>(&mut 2).unwrap(), true);
+    assert_eq!(bytes.read::<bool>(&mut 3).unwrap(), true);
 
     let mut bytes = [0u8; 2];
-    bytes.pwrite(0, false).unwrap();
-    bytes.pwrite(1, true).unwrap();
+    bytes.write(&mut 0, false).unwrap();
+    bytes.write(&mut 1, true).unwrap();
     assert!(bytes[0] == 0);
     assert!(bytes[1] != 0);
 }
@@ -123,13 +122,13 @@ fn test_bytes_pattern() {
                (&b"abcde\0fghijk"[..], 12));
 
     assert!(bytes
-                .pread_with::<&[u8]>(0, ByteCtx::Pattern(b"bcd"))
+                .read_with::<&[u8]>(&mut 0, ByteCtx::Pattern(b"bcd"))
                 .is_err());
     assert!(bytes
-                .pread_with::<&[u8]>(0, ByteCtx::UntilPattern(b"xyz"))
+                .read_with::<&[u8]>(&mut 0, ByteCtx::UntilPattern(b"xyz"))
                 .is_err());
     assert!(bytes
-                .pread_with::<&[u8]>(10, ByteCtx::UntilPattern(b"jkl"))
+                .read_with::<&[u8]>(&mut 0, ByteCtx::UntilPattern(b"jkl"))
                 .is_err());
 }
 
@@ -138,7 +137,7 @@ fn test_iter() {
     let bytes: &[u8] = b"hello\0world\0dead\0beef\0more";
     let mut offset = 0;
     {
-        let mut iter = bytes.gread_iter(&mut offset, StrCtx::Delimiter(NULL));
+        let mut iter = bytes.read_iter(&mut offset, StrCtx::Delimiter(NULL));
         assert_eq!(iter.next(), Some("hello"));
         assert_eq!(iter.next(), Some("world"));
         assert_eq!(iter.next(), Some("dead"));
@@ -153,23 +152,23 @@ macro_rules! test_num {
         quickcheck! {
             fn $test_name (num: $ty) -> () {
                 let mut bytes = [0u8; 8];          
-                bytes.pwrite_with(0, num, LE).unwrap();
+                bytes.write_with(&mut 0, num, LE).unwrap();
                 let result = LittleEndian::$byteorder_read_fn(&bytes);
                 assert_eq!(result, num);
                 
                 let mut bytes = [0u8; 8];          
                 LittleEndian::$byteorder_write_fn(&mut bytes, num);
-                let result: $ty = bytes.pread_with(0, LE).unwrap();
+                let result: $ty = bytes.read_with(&mut 0, LE).unwrap();
                 assert_eq!(result, num);
 
                 let mut bytes = [0u8; 8];          
-                bytes.pwrite_with(0, num, BE).unwrap();
+                bytes.write_with(&mut 0, num, BE).unwrap();
                 let result = BigEndian::$byteorder_read_fn(&bytes);
                 assert_eq!(result, num);
                 
                 let mut bytes = [0u8; 8];          
                 BigEndian::$byteorder_write_fn(&mut bytes, num);
-                let result: $ty = bytes.pread_with(0, BE).unwrap();
+                let result: $ty = bytes.read_with(&mut 0, BE).unwrap();
                 assert_eq!(result, num);
             }
         }

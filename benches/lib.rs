@@ -18,10 +18,10 @@ fn bench_byteorder(b: &mut test::Bencher) {
 }
 
 #[bench]
-fn bench_pread(b: &mut test::Bencher) {
+fn bench_read(b: &mut test::Bencher) {
     const N: u64 = 10_000;
     b.iter(|| for _ in 1..N {
-               black_box([1, 2].pread_with::<u16>(0, LE).unwrap());
+               black_box([1, 2].read_with::<u16>(0, LE).unwrap());
            });
     b.bytes = 2 * N;
 }
