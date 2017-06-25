@@ -30,7 +30,7 @@ pub trait TryWrite<Ctx = ()> {
     fn try_write(self, scroll: &mut [u8], ctx: Ctx) -> Result<usize>;
 }
 
-pub trait Read<'a, Ctx> {
+pub trait SliceExt<'a, Ctx> {
     fn read<T>(&'a self, offset: &mut usize) -> Result<T>
         where T: TryRead<'a, Ctx>,
               Ctx: Default
@@ -45,7 +45,7 @@ pub trait Read<'a, Ctx> {
               Ctx: Clone;
 }
 
-pub trait Write<Ctx>
+pub trait SliceExtMut<Ctx>
     where Self: Sized
 {
     fn write<T>(&mut self, offset: &mut usize, t: T) -> Result<()>
@@ -60,7 +60,7 @@ pub trait Write<Ctx>
 }
 
 
-impl<'a, Ctx, Slice> Read<'a, Ctx> for Slice
+impl<'a, Ctx, Slice> SliceExt<'a, Ctx> for Slice
     where Slice: AsRef<[u8]>
 {
     #[inline]
@@ -92,7 +92,7 @@ impl<'a, Ctx, Slice> Read<'a, Ctx> for Slice
     }
 }
 
-impl<Ctx, Slice> Write<Ctx> for Slice
+impl<Ctx, Slice> SliceExtMut<Ctx> for Slice
     where Slice: AsMut<[u8]>
 {
     fn write_with<T>(&mut self, offset: &mut usize, t: T, ctx: Ctx) -> Result<()>
