@@ -1,5 +1,5 @@
 use {TryRead, TryWrite, Error, Result, check_len};
-use std::str;
+use core::str;
 
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum StrCtx {

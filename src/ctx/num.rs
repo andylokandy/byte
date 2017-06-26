@@ -1,5 +1,5 @@
 use {TryRead, TryWrite, Result, check_len};
-use std::mem;
+use core::mem;
 
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum Endian {

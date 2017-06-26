@@ -1,8 +1,10 @@
+#![no_std]
+
 pub mod ctx;
 pub use ctx::num::{LE, BE};
-use std::marker::PhantomData;
+use core::marker::PhantomData;
 
-type Result<T> = std::result::Result<T, Error>;
+type Result<T> = core::result::Result<T, Error>;
 
 #[derive(Debug)]
 pub enum Error {
