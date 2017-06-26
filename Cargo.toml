@@ -1,6 +1,6 @@
 [package]
-name = "scroll"
-version = "0.1.0"
+name = "byte"
+version = "0.2.0"
 authors = ["andylokandy <andyokandy@hotmail.com>"]
 
 [dependencies]

@@ -27,10 +27,10 @@ macro_rules! num_impl {
 
         impl<'a> TryRead<'a, Endian> for $ty {
             #[inline]
-            fn try_read(scroll: &'a [u8], endian: Endian) -> Result<(Self, usize)> {
-                check_len(scroll, $size)?;
+            fn try_read(bytes: &'a [u8], endian: Endian) -> Result<(Self, usize)> {
+                check_len(bytes, $size)?;
 
-                let val: $ty = unsafe { *(&scroll[0] as *const _ as *const _) };
+                let val: $ty = unsafe { *(&bytes[0] as *const _ as *const _) };
                 let val = match endian {
                     Endian::Big => val.to_be(),
                     Endian::Little => val.to_le(),
@@ -42,15 +42,15 @@ macro_rules! num_impl {
 
         impl TryWrite<Endian> for $ty {
             #[inline]
-            fn try_write(self, scroll: &mut [u8], endian: Endian) -> Result<usize> {
-                check_len(scroll, $size)?;
+            fn try_write(self, bytes: &mut [u8], endian: Endian) -> Result<usize> {
+                check_len(bytes, $size)?;
 
                 let val = match endian {
                     Endian::Big => self.to_be(),
                     Endian::Little => self.to_le(),
                 };
 
-                unsafe { *(&mut scroll[0] as *mut _ as *mut _) = val };
+                unsafe { *(&mut bytes[0] as *mut _ as *mut _) = val };
 
                 Ok($size)
             }
@@ -75,16 +75,16 @@ macro_rules! float_impl {
 
         impl<'a> TryRead<'a, Endian> for $ty {
             #[inline]
-            fn try_read(scroll: &'a [u8], endian: Endian) -> Result<(Self, usize)> {
-                <$base as TryRead<'a, Endian>>::try_read(scroll, endian)
+            fn try_read(bytes: &'a [u8], endian: Endian) -> Result<(Self, usize)> {
+                <$base as TryRead<'a, Endian>>::try_read(bytes, endian)
                     .map(|(val, size)| (unsafe { mem::transmute(val) }, size))
             }
         }
 
         impl<'a> TryWrite<Endian> for $ty {
             #[inline]
-            fn try_write(self, scroll: &mut [u8], endian: Endian) -> Result<usize> {
-                <$base as TryWrite<Endian>>::try_write(unsafe { mem::transmute(self) }, scroll, endian)
+            fn try_write(self, bytes: &mut [u8], endian: Endian) -> Result<usize> {
+                <$base as TryWrite<Endian>>::try_write(unsafe { mem::transmute(self) }, bytes, endian)
             }
         }
 

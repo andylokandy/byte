@@ -12,8 +12,8 @@ pub enum Error {
 }
 
 #[inline]
-pub fn check_len(scroll: &[u8], len: usize) -> Result<usize> {
-    if scroll.len() < len {
+pub fn check_len(bytes: &[u8], len: usize) -> Result<usize> {
+    if bytes.len() < len {
         Err(Error::Incomplete)
     } else {
         Ok(len)
@@ -23,14 +23,14 @@ pub fn check_len(scroll: &[u8], len: usize) -> Result<usize> {
 pub trait TryRead<'a, Ctx = ()>
     where Self: Sized
 {
-    fn try_read(scroll: &'a [u8], ctx: Ctx) -> Result<(Self, usize)>;
+    fn try_read(bytes: &'a [u8], ctx: Ctx) -> Result<(Self, usize)>;
 }
 
 pub trait TryWrite<Ctx = ()> {
-    fn try_write(self, scroll: &mut [u8], ctx: Ctx) -> Result<usize>;
+    fn try_write(self, bytes: &mut [u8], ctx: Ctx) -> Result<usize>;
 }
 
-pub trait SliceExt<'a, Ctx> {
+pub trait BytesExt<'a, Ctx> {
     fn read<T>(&'a self, offset: &mut usize) -> Result<T>
         where T: TryRead<'a, Ctx>,
               Ctx: Default
@@ -45,7 +45,7 @@ pub trait SliceExt<'a, Ctx> {
               Ctx: Clone;
 }
 
-pub trait SliceExtMut<Ctx>
+pub trait BytesExtMut<Ctx>
     where Self: Sized
 {
     fn write<T>(&mut self, offset: &mut usize, t: T) -> Result<()>
@@ -60,7 +60,7 @@ pub trait SliceExtMut<Ctx>
 }
 
 
-impl<'a, Ctx, Slice> SliceExt<'a, Ctx> for Slice
+impl<'a, Ctx, Slice> BytesExt<'a, Ctx> for Slice
     where Slice: AsRef<[u8]>
 {
     #[inline]
@@ -84,7 +84,7 @@ impl<'a, Ctx, Slice> SliceExt<'a, Ctx> for Slice
               Ctx: Clone
     {
         Iter {
-            scroll: self.as_ref(),
+            bytes: self.as_ref(),
             offset: offset,
             ctx: ctx,
             phantom: PhantomData,
@@ -92,7 +92,7 @@ impl<'a, Ctx, Slice> SliceExt<'a, Ctx> for Slice
     }
 }
 
-impl<Ctx, Slice> SliceExtMut<Ctx> for Slice
+impl<Ctx, Slice> BytesExtMut<Ctx> for Slice
     where Slice: AsMut<[u8]>
 {
     fn write_with<T>(&mut self, offset: &mut usize, t: T, ctx: Ctx) -> Result<()>
@@ -116,7 +116,7 @@ pub struct Iter<'a, 'i, T, Ctx>
     where T: TryRead<'a, Ctx>,
           Ctx: Clone
 {
-    scroll: &'a [u8],
+    bytes: &'a [u8],
     offset: &'i mut usize,
     ctx: Ctx,
     phantom: PhantomData<T>,
@@ -130,7 +130,7 @@ impl<'a, 'i, T, Ctx> Iterator for Iter<'a, 'i, T, Ctx>
 
     #[inline]
     fn next(&mut self) -> Option<T> {
-        TryRead::try_read(&self.scroll[*self.offset..], self.ctx.clone())
+        TryRead::try_read(&self.bytes[*self.offset..], self.ctx.clone())
             .ok()
             .map(|(t, size)| {
                      *self.offset += size;

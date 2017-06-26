@@ -1,12 +1,12 @@
 #[macro_use]
 extern crate quickcheck;
 extern crate byteorder;
-extern crate scroll;
+extern crate byte;
 
 use byteorder::*;
-use scroll::*;
-use scroll::ctx::str::*;
-use scroll::ctx::bytes::*;
+use byte::*;
+use byte::ctx::str::*;
+use byte::ctx::bytes::*;
 
 #[test]
 fn test_str_read() {
