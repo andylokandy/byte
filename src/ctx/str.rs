@@ -1,34 +1,72 @@
 use {TryRead, TryWrite, Error, Result, check_len};
 use core::str;
 
+/// Context for &str to determine where a &str ends.
+///
+/// Default to **null** delimiter.
+///
+/// # Example
+///
+/// ```
+/// use byte::*;
+/// use byte::ctx::*;
+///
+/// let bytes: &[u8] = b"hello, world!\0";
+///
+/// let str: &str = bytes.read(&mut 0).unwrap();
+/// assert_eq!(str, "hello, world!");
+///
+/// let str: &str = bytes.read_with(&mut 0, Str::Len(5)).unwrap();
+/// assert_eq!(str, "hello");
+///
+/// let str: &str = bytes.read_with(&mut 0, Str::Delimiter(b"!"[0])).unwrap();
+/// assert_eq!(str, "hello, world");
+///
+/// let str: &str = bytes.read_with(&mut 0, Str::DelimiterUntil(NULL, 5)).unwrap();
+/// assert_eq!(str, "hello");
+/// ```
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
-pub enum StrCtx {
+pub enum Str {
+    /// Take fix-length bytes as str
+    Len(usize),
+    /// Take bytes until reaching a delimiter
     Delimiter(u8),
+    /// Take bytes until either delimiter or length reached
     DelimiterUntil(u8, usize),
-    Length(usize),
 }
 
+impl Default for Str {
+    #[inline]
+    fn default() -> Self {
+        Str::Delimiter(NULL)
+    }
+}
+
+/// Null string delimiter
 pub const NULL: u8 = 0;
+/// Space string delimiter
 pub const SPACE: u8 = 0x20;
+/// Return string delimiter
 pub const RET: u8 = 0x0a;
+/// Tab string delimiter
 pub const TAB: u8 = 0x09;
 
-impl<'a> TryRead<'a, StrCtx> for &'a str {
+impl<'a> TryRead<'a, Str> for &'a str {
     #[inline]
-    fn try_read(bytes: &'a [u8], ctx: StrCtx) -> Result<(Self, usize)> {
+    fn try_read(bytes: &'a [u8], ctx: Str) -> Result<(Self, usize)> {
         let (bytes, size) = match ctx {
-            StrCtx::Length(len) => {
+            Str::Len(len) => {
                 let len = check_len(bytes, len)?;
                 (&bytes[..len], len)
             }
-            StrCtx::Delimiter(delimiter) => {
+            Str::Delimiter(delimiter) => {
                 let position = bytes
                     .iter()
                     .position(|c| *c == delimiter)
                     .ok_or(Error::Incomplete)?;
                 (&bytes[..position], position + 1)
             }
-            StrCtx::DelimiterUntil(delimiter, len) => {
+            Str::DelimiterUntil(delimiter, len) => {
                 let position = bytes.iter().take(len).position(|c| *c == delimiter);
                 match position {
                     Some(position) => (&bytes[..position], position + 1),
@@ -42,7 +80,7 @@ impl<'a> TryRead<'a, StrCtx> for &'a str {
 
         str::from_utf8(bytes)
             .map(|str| (str, size))
-            .map_err(|_| Error::BadInput("UTF8 Error"))
+            .map_err(|_| Error::BadInput { err: "UTF8 Error" })
     }
 }
 
