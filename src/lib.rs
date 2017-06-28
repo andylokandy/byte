@@ -22,7 +22,7 @@
 //!
 //! `Byte` is mainly used to encode and decode binary data with standard or protocol,
 //! such as network TCP packages and hardware communication packages.
-//! So it's more similar to crate `nom` but more ligthweight and specialized for operating binary in low-level or hardware programing.
+//! So it's similar to crate `nom` but more ligthweight and specialized for operating binary in low-level or hardware programing.
 //!
 //! `Byte` delivers two core traits `TryRead` and `TryWrite`.
 //! Types implement these traits can be serialize into or deserialize from byte slices.
@@ -40,6 +40,8 @@
 //! which will be increaed by the size operation consumed.
 //! Serializing types usually requires some context such as the endian for numbers,
 //! in such situations, `read_with` is used and we can pass context as the second parameter.
+//!
+//! ## Primitives
 //!
 //! ```
 //! use byte::*;
