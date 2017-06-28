@@ -1,15 +1,15 @@
 [package]
 name = "byte"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["goandylok"]
 license = "MIT/Apache-2.0"
 
 description = "A low-level, zero-copy, panic-free, binary serializer and deserializer. (parser and encoder)"
 documentation = "https://docs.rs/byte"
-repository = "https://github.com/goandylok/arraydeque"
+repository = "https://github.com/goandylok/byte"
 homepage = "https://github.com/goandylok/byte"
 
-keywords = ["byte", "serialize", "binary", "encode", "no_std"]
+keywords = ["binary", "parser", "decode", "encode", "no_std"]
 categories = ["no-std", "embedded", "encoding", "parsing"]
 
 [dev-dependencies]

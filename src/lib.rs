@@ -55,6 +55,7 @@
 //! ```
 //!
 //! `Byte` supports language primitives by default.
+//!
 //! - `&str` (with context `Str`)
 //! - `&[u8]` (with context `Byte`)
 //! - `u8`, `i8`, `u64`, `f64` ... (with context `Endian`)
@@ -112,7 +113,7 @@
 //! }
 //!
 //! impl<'a> TryWrite<Endian> for Header<'a> {
-//!     fn try_write(self, mut bytes: &mut [u8], endian: Endian) -> Result<usize> {
+//!     fn try_write(self, bytes: &mut [u8], endian: Endian) -> Result<usize> {
 //!         let offset = &mut 0;
 //!
 //!         bytes.write_with(offset, self.name.len() as u16, endian)?;

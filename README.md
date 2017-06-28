@@ -122,7 +122,7 @@ impl<'a> TryRead<'a, Endian> for Header<'a> {
 }
 
 impl<'a> TryWrite<Endian> for Header<'a> {
-    fn try_write(self, mut bytes: &mut [u8], endian: Endian) -> Result<usize> {
+    fn try_write(self, bytes: &mut [u8], endian: Endian) -> Result<usize> {
         let offset = &mut 0;
 
         bytes.write_with(offset, self.name.len() as u16, endian)?;
