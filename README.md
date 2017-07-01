@@ -88,6 +88,7 @@ In this example, we defined a custom type `Header`, which have a varibal-length 
 We implement `TryRead` and `TryWrite` to enable this type to be serialzed and deserialized. 
 
 ### Byte Representation
+
 ```
 |       | Length of name (Big Endian) |                Name              | Enabled |
 | ----- | --------------------------- | ---- | ---- | ---- | ---- | ---- | ------- |

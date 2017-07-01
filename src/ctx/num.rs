@@ -3,6 +3,8 @@ use core::mem;
 
 /// Endian of numbers.
 ///
+/// Default to machine's native endian.
+///
 /// # Example
 ///
 /// ```

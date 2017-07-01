@@ -79,6 +79,7 @@
 //! We implement `TryRead` and `TryWrite` to enable this type to be serialzed and deserialized.
 //!
 //! ## Byte Representation
+//! 
 //! ```text
 //! |       | Length of name (Big Endian) |                Name              | Enabled |
 //! | ----- | --------------------------- | ---- | ---- | ---- | ---- | ---- | ------- |
