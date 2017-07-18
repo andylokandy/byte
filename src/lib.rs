@@ -285,7 +285,7 @@ pub trait BytesExt<Ctx> {
     /// assert_eq!(bool1, false);
     /// assert_eq!(bool2, true);
     /// ```
-    fn read<'a, 'i, T>(&'a self, offset: &'i mut usize) -> Result<T>
+    fn read<'a, T>(&'a self, offset: &mut usize) -> Result<T>
         where T: TryRead<'a, Ctx>,
               Ctx: Default;
 
@@ -302,7 +302,7 @@ pub trait BytesExt<Ctx> {
     /// let str: &str = bytes.read_with(&mut 0, Str::Delimiter(b"!"[0])).unwrap();
     /// assert_eq!(str, "hello, world");
     /// ```
-    fn read_with<'a, 'i, T>(&'a self, offset: &'i mut usize, ctx: Ctx) -> Result<T>
+    fn read_with<'a, T>(&'a self, offset: &mut usize, ctx: Ctx) -> Result<T>
         where T: TryRead<'a, Ctx>;
 
 
@@ -371,7 +371,7 @@ pub trait BytesExt<Ctx> {
 
 
 impl<Ctx> BytesExt<Ctx> for [u8] {
-    fn read<'a, 'i, T>(&'a self, offset: &'i mut usize) -> Result<T>
+    fn read<'a, T>(&'a self, offset: &mut usize) -> Result<T>
         where T: TryRead<'a, Ctx>,
               Ctx: Default
     {
@@ -379,7 +379,7 @@ impl<Ctx> BytesExt<Ctx> for [u8] {
     }
 
     #[inline]
-    fn read_with<'a, 'i, T>(&'a self, offset: &'i mut usize, ctx: Ctx) -> Result<T>
+    fn read_with<'a, T>(&'a self, offset: &mut usize, ctx: Ctx) -> Result<T>
         where T: TryRead<'a, Ctx>
     {
         let slice = self.as_ref();
