@@ -1,8 +1,8 @@
 #![feature(test)]
 
-extern crate test;
-extern crate byteorder;
 extern crate byte;
+extern crate byteorder;
+extern crate test;
 
 use test::black_box;
 use byteorder::*;
@@ -11,89 +11,79 @@ use byte::ctx::*;
 
 #[bench]
 fn bench_byteorder(b: &mut test::Bencher) {
-    const N: u64 = 1000;
-    b.iter(|| for _ in 1..N {
-               black_box(LittleEndian::read_u16(&black_box([1, 2])));
-           });
-    b.bytes = 2 * N;
+    b.iter(|| black_box(LittleEndian::read_u16(&black_box([1, 2]))));
+    b.bytes = 2;
 }
 
 #[bench]
 fn bench_read_num(b: &mut test::Bencher) {
-    const N: u64 = 1000;
-    b.iter(|| for _ in 1..N {
-               black_box(black_box([1, 2]).read_with::<u16>(&mut 0, LE).unwrap());
-           });
-    b.bytes = 2 * N;
+    b.iter(|| black_box(black_box([1, 2]).read_with::<u16>(&mut 0, LE).unwrap()));
+    b.bytes = 2;
 }
 
 #[bench]
 fn bench_str(b: &mut test::Bencher) {
-    const N: u64 = 1000;
     let bytes = b"abcdefghijkl";
-    b.iter(|| for _ in 1..N {
-               black_box(black_box(bytes)
-                             .read_with::<&str>(&mut 0, Str::Len(5))
-                             .unwrap());
-           });
+    b.iter(|| {
+        black_box(
+            black_box(bytes)
+                .read_with::<&str>(&mut 0, Str::Len(5))
+                .unwrap(),
+        )
+    });
+    b.bytes = 5;
 }
 
 #[bench]
 fn bench_str_hardcode(b: &mut test::Bencher) {
-    const N: u64 = 1000;
     let bytes = b"abcdefghijkl";
-    b.iter(|| for _ in 1..N {
-               black_box(std::str::from_utf8(&black_box(bytes)[0..5]).unwrap());
-           });
+    b.iter(|| black_box(std::str::from_utf8(&black_box(bytes)[0..5]).unwrap()));
+    b.bytes = 5;
 }
 
 #[bench]
-fn bench_api_example_read(b: &mut test::Bencher) {
-    const N: u64 = 1000;
+fn bench_example_read(b: &mut test::Bencher) {
     let bytes = black_box([0, 5, b"H"[0], b"E"[0], b"L"[0], b"L"[0], b"O"[0], 0]);
-    b.iter(|| for _ in 1..N {
-               black_box(bytes.read_with::<Header>(&mut 0, BE).unwrap());
-           });
+    b.iter(|| black_box(bytes.read_with::<Header>(&mut 0, BE).unwrap()));
+    b.bytes = 8;
 }
 
 #[bench]
-fn bench_api_example_write(b: &mut test::Bencher) {
-    const N: u64 = 1000;
+fn bench_example_write(b: &mut test::Bencher) {
     let mut bytes = [0u8; 8];
-    b.iter(|| for _ in 1..N {
-               let header = Header {
-                   name: "HELLO",
-                   enabled: false,
-               };
-               bytes.write_with::<Header>(&mut 0, header, BE).unwrap();
-               black_box(bytes);
-           });
+    b.iter(|| {
+        let header = Header {
+            name: "HELLO",
+            enabled: false,
+        };
+        bytes.write_with::<Header>(&mut 0, header, BE).unwrap();
+        black_box(bytes)
+    });
+    b.bytes = 8;
 }
 
 #[bench]
-fn bench_api_hardcode_read(b: &mut test::Bencher) {
-    const N: u64 = 1000;
+fn bench_example_read_hardcode(b: &mut test::Bencher) {
     let bytes = black_box([0, 5, b"H"[0], b"E"[0], b"L"[0], b"L"[0], b"O"[0], 0]);
-    b.iter(|| for _ in 1..N {
-               black_box(read_api_hardcode(&bytes[..]).unwrap());
-           });
+    b.iter(|| black_box(example_read_hardcode(&bytes[..]).unwrap()));
+    b.bytes = 8;
 }
 
 #[bench]
-fn bench_api_hardcode_write(b: &mut test::Bencher) {
-    const N: u64 = 1000;
+fn bench_example_write_hardcode(b: &mut test::Bencher) {
     let mut bytes = [0u8; 8];
-    b.iter(|| for _ in 1..N {
-               let header = Header {
-                   name: "HELLO",
-                   enabled: false,
-               };
-               write_api_hardcode(&mut bytes[..], header).unwrap();
-               black_box(bytes);
-           });
+    b.iter(|| {
+        let header = Header {
+            name: "HELLO",
+            enabled: false,
+        };
+        example_write_hardcode(&mut bytes[..], header).unwrap();
+        black_box(bytes);
+    });
+    b.bytes = 8;
 }
 
-fn read_api_hardcode<'a>(bytes: &'a [u8]) -> Option<Header<'a>> {
+fn example_read_hardcode<'a>(bytes: &'a [u8]) -> Option<Header<'a>> {
     if bytes.len() < 3 {
         return None;
     }
@@ -111,7 +101,7 @@ fn read_api_hardcode<'a>(bytes: &'a [u8]) -> Option<Header<'a>> {
     Some(Header { name, enabled })
 }
 
-fn write_api_hardcode(bytes: &mut [u8], header: Header) -> Option<()> {
+fn example_write_hardcode(bytes: &mut [u8], header: Header) -> Option<()> {
     if bytes.len() < header.name.len() + 3 {
         return None;
     }

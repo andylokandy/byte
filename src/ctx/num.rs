@@ -1,3 +1,5 @@
+#![allow(unused_parens)]
+
 use {TryRead, TryWrite, Result, check_len};
 use core::mem;
 

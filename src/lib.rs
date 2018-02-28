@@ -421,7 +421,7 @@ impl<Ctx> BytesExt<Ctx> for [u8] {
     fn write_with<T>(&mut self, offset: &mut usize, t: T, ctx: Ctx) -> Result<()>
         where T: TryWrite<Ctx>
     {
-        let mut slice = self.as_mut();
+        let slice = self.as_mut();
 
         if *offset >= slice.len() {
             return Err(Error::BadOffset(*offset));
