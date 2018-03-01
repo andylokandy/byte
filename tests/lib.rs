@@ -92,7 +92,7 @@ fn test_str_write() {
     assert_eq!(offset, 12);
     assert_eq!(&bytes[..offset], b"hello world!" as &[u8]);
 
-    let mut bytes = &mut [0; 10];
+    let bytes = &mut [0; 10];
     assert!(bytes.write(&mut 0, "hello world!").is_err());
 }
 

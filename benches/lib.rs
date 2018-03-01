@@ -52,12 +52,11 @@ fn bench_example_read(b: &mut test::Bencher) {
 fn bench_example_write(b: &mut test::Bencher) {
     let mut bytes = [0u8; 8];
     b.iter(|| {
-        let header = Header {
+        let header = black_box(Header {
             name: "HELLO",
             enabled: false,
-        };
+        });
         bytes.write_with::<Header>(&mut 0, header, BE).unwrap();
-        black_box(bytes)
     });
     b.bytes = 8;
 }
@@ -73,12 +72,11 @@ fn bench_example_read_hardcode(b: &mut test::Bencher) {
 fn bench_example_write_hardcode(b: &mut test::Bencher) {
     let mut bytes = [0u8; 8];
     b.iter(|| {
-        let header = Header {
+        let header = black_box(Header {
             name: "HELLO",
             enabled: false,
-        };
+        });
         example_write_hardcode(&mut bytes[..], header).unwrap();
-        black_box(bytes);
     });
     b.bytes = 8;
 }
