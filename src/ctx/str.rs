@@ -3,7 +3,9 @@ use core::str;
 
 /// Context for &str to determine where a &str ends.
 ///
-/// Default to **null** delimiter.
+/// Pattern will **not** be included in the result
+/// 
+/// Default to `NULL` delimiter.
 ///
 /// # Example
 ///

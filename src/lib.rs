@@ -1,4 +1,4 @@
-//! A low-level, zero-copy, panic-free, binary serializer and deserializer (parser and encoder)
+//! A low-level, zero-copy, panic-free, binary serializer and deserializer
 //!
 //! # Usage
 //!
@@ -22,13 +22,13 @@
 //!
 //! `Byte` is mainly used to encode and decode binary data with standard or protocol,
 //! such as network TCP packages and hardware communication packages.
-//! So it's similar to crate `nom` but more ligthweight and specialized for operating binary in low-level or hardware programing.
+//! It's similar to crate `nom` but more ligthweight and specialized for operating binary in low-level and hardware programing.
 //!
 //! `Byte` delivers two core traits `TryRead` and `TryWrite`.
 //! Types implement these traits can be serialize into or deserialize from byte slices.
 //! Byte slices `[u8]` derives methods `read()` and `write()` to serialize, deserialize and handle offset.
 //!
-//! All functionality is kept minimum in order to work in more situations.
+//! Small and general is kept in mind in this library.
 //! For example, `Byte` can take byte slice from [**MMap**](https://crates.io/crates/mmap) to read binary file,
 //! or take heap-allocated byte buffer from [**Bytes**](https://github.com/carllerche/bytes).
 //!
@@ -36,49 +36,51 @@
 //! # Example
 //!
 //! `Byte` consumes byte slice continuously. The first parameter of `read` is offset,
-//! instructing the position to begin, and it must be a mutable referece of usize,
-//! which will be increaed by the size operation consumed.
-//! Serializing types usually requires some context such as the endian for numbers,
-//! in such situations, `read_with` is used and we can pass context as the second parameter.
-//!
-//! ## Primitives
+//! instructing the position to begin,
+//! which will be increaed by size the operation consumed.
+//! Reading a types usually requires some context, such as the endian of number,
+//! in such situations, `read_with` is used and we can pass the context as the second parameter.
 //!
 //! ```
 //! use byte::*;
-//!
+//! 
 //! let bytes: &[u8] = &[0xde, 0xad, 0xbe, 0xef];
+//! 
 //! let offset = &mut 0;
-//!
 //! let num = bytes.read_with::<u32>(offset, BE).unwrap();
 //! assert_eq!(num, 0xdeadbeef);
 //! assert_eq!(*offset, 4);
 //! ```
-//!
+//! 
+//! ```
+//! use byte::*;
+//! use byte::ctx::{Str, NULL};
+//! 
+//! let bytes: &[u8] = b"hello, world!\0dump";
+//! 
+//! let offset = &mut 0;
+//! let str = bytes.read_with::<&str>(offset, Str::Delimiter(NULL)).unwrap();
+//! assert_eq!(str, "hello, world!");
+//! assert_eq!(*offset, 14);
+//! ```
+//! 
 //! `Byte` supports language primitives by default.
 //!
 //! - `&str` (with context `Str`)
 //! - `&[u8]` (with context `Byte`)
 //! - `u8`, `i8`, `u64`, `f64` ... (with context `Endian`)
 //! - `bool`
-//! - ...
 //!
-//! `&str` and `&[u8]` have references to the byte slice so there is no copy when `read` and it has the same lifetime as the byte slice.
-//!
-//! ```
-//! use byte::*;
-//! use byte::ctx::{Str, NULL};
-//!
-//! let bytes: &[u8] = b"hello, world!\0more";
-//! let str: &str = bytes.read_with(&mut 0, Str::Delimiter(NULL)).unwrap();
-//! assert_eq!(str, "hello, world!");
-//! ```
+//! `&str` and `&[u8]` are references to the byte slice so there is no copy when `read()` and it has the same lifetime as the byte slice.
 //!
 //! # Define custom serializable type
 //!
 //! In this example, we defined a custom type `Header`, which have a varibal-length name and a `bool` field.
 //! We implement `TryRead` and `TryWrite` to enable this type to be serialzed and deserialized.
+//! 
+//! Below is an example of communication protocol
 //!
-//! ## Byte Representation
+//! ## Protocol Byte Representation
 //! 
 //! ```text
 //! |       | Length of name (Big Endian) |                Name              | Enabled |
@@ -86,9 +88,11 @@
 //! | Byte  | 0            | 5            | 'H'  | 'E'  | 'L'  | 'L'  | 'O'  | 0       |
 //! ```
 //!
-//! Note that the passed-in `bytes` is implicitly splitted by offset and should be read at head.
-//! And the type `Result` is an alias defind in `Byte` as `core::result::Result<(T, size), byte::Error>`,
-//! where the size is the number of bytes `read` or `write` consumed and it will be used to incread the offset.
+//! Below is the code to realize a reader and writer to it.
+//! 
+//! Note that the `bytes` passed in is splitted by offset and should be read at head.
+//! Type `Result` is an alias as `core::result::Result<(T, size), byte::Error>`,
+//! where the size is the number of bytes `read` or `write` consumed and it will be used to increase the offset.
 //!
 //! ```
 //! use byte::*;
@@ -106,7 +110,7 @@
 //!         let name_len = bytes.read_with::<u16>(offset, endian)? as usize;
 //!         let header = Header {
 //!             name: bytes.read_with::<&str>(offset, Str::Len(name_len))?,
-//!             enabled: bytes.read(offset)?,
+//!             enabled: bytes.read::<bool>(offset)?,
 //!         };
 //!
 //!         Ok((header, *offset))
@@ -117,9 +121,9 @@
 //!     fn try_write(self, bytes: &mut [u8], endian: Endian) -> Result<usize> {
 //!         let offset = &mut 0;
 //!
-//!         bytes.write_with(offset, self.name.len() as u16, endian)?;
-//!         bytes.write(offset, self.name)?;
-//!         bytes.write(offset, self.enabled)?;
+//!         bytes.write_with::<u16>(offset, self.name.len() as u16, endian)?;
+//!         bytes.write::<&str>(offset, self.name)?;
+//!         bytes.write::<bool>(offset, self.enabled)?;
 //!
 //!         Ok(*offset)
 //!     }
@@ -151,14 +155,13 @@ pub type Result<T> = core::result::Result<T, Error>;
 
 /// The error type for serializing and deserializing.
 ///
-/// - `Error::BadOffset` can only be raised by `slice.read()` and `slice.write()`
-/// when offset is bigger than byte slice's length.
+/// - `Error::BadOffset` should only raised in `bytes.read()` and `bytes.write()`
+/// when offset exceeded slice's length.
 ///
-/// - `Error::BadInput` and `Error::Incomplete` should only be raised by `try_read()` and `try_write()`.
+/// - `Error::BadInput` and `Error::Incomplete` should only raised in `try_read()` and `try_write()`.
 ///
-/// Note that we usually use `slice.read()` in `try_read()` which may raises `Error::BadOffset` inside `try_read()`,
-/// so `SliceExt` will automatically translate `Error::BadOffset` inside `try_read()`
-/// into `Error::Incomplete`. (same as write)
+/// Note that we usually use `bytes.read()` in `try_read()` implementation which may raises `Error::BadOffset`,
+/// and that error will automatically be translate into `Error::Incomplete`.
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum Error {
     /// The requested data is bigger than available range
@@ -169,8 +172,8 @@ pub enum Error {
     BadInput { err: &'static str },
 }
 
-/// A shorthand function used to check whether the given length
-/// is within slice's bound; return `Err(Error::Incomplete)` if not.
+/// A shorthand function to check whether the given length
+/// exceeded the length of slice; return `Err(Error::Incomplete)` if not.
 ///
 /// Usually used in implementation of `TryRead` and `TryWrite`.
 ///
@@ -198,8 +201,8 @@ pub trait TryRead<'a, Ctx = ()>
 {
     /// Try to read from bytes using context.
     ///
-    /// Read the value out of bytes; the passed-in bytes is implicitly splitted by offset and should be read at head.
-    /// If success, `try_read()` should return a tuple of value and the number of bytes it consumed.
+    /// Read the value out of bytes; the bytes passed in is splitted by offset and should be read at head.
+    /// If success, `try_read()` should return a tuple with the value and the number of bytes consumed.
     ///
     /// # Example
     ///
@@ -219,11 +222,6 @@ pub trait TryRead<'a, Ctx = ()>
     ///     }
     /// }
     /// ```
-    ///
-    /// # Error
-    ///
-    /// If `try_read()` returns `Error::BadOffset`, it will be translated into `Error::Incomplete`.
-    /// See [`byte::Error`](enum.Error.html) documentation for details.
     fn try_read(bytes: &'a [u8], ctx: Ctx) -> Result<(Self, usize)>;
 }
 
@@ -231,19 +229,17 @@ pub trait TryRead<'a, Ctx = ()>
 pub trait TryWrite<Ctx = ()> {
     /// Try to write to bytes using context.
     ///
-    /// Write the value into bytes; the passed-in bytes is implicitly splitted by offset and should be write at head.
-    /// If success, `try_write()` should return the number of bytes it consumed.
+    /// Write the value into bytes; the bytes passed in is splitted by offset and should be write at head.
+    /// If success, `try_write()` should return the number of bytes written.
     ///
     /// # Example
     ///
     /// ```
     /// use byte::*;
     ///
-    /// // Demo type showing how to write boolean into bytes.
-    /// // This functionality is already provided by this crate.
-    /// pub struct Bool(bool);
+    /// pub struct HasBool(bool);
     ///
-    /// impl TryWrite for Bool {
+    /// impl TryWrite for HasBool {
     ///     #[inline]
     ///     fn try_write(self, bytes: &mut [u8], _ctx: ()) -> Result<usize> {
     ///         check_len(bytes, 1)?;
@@ -254,11 +250,6 @@ pub trait TryWrite<Ctx = ()> {
     ///     }
     /// }
     /// ```
-    ///
-    /// # Error
-    ///
-    /// If `try_write()` returns `Error::BadOffset`, it will be translated into `Error::Incomplete`.
-    /// See [`byte::Error`](enum.Error.html) documentation for details.
     fn try_write(self, bytes: &mut [u8], ctx: Ctx) -> Result<usize>;
 }
 
@@ -266,9 +257,9 @@ pub trait TryWrite<Ctx = ()> {
 ///
 /// # Offset
 ///
-/// The first parameter of each method derive from `BytesExt` is offset,
-/// instructing the position to begin, and it must be a mutable referece of usize,
-/// which will be increaed by the size operation consumed.
+/// The first parameter of each method is offset,
+/// instructing the position to begin,
+/// which will be increaed by size the operation consumed.
 pub trait BytesExt<Ctx> {
     /// Read value from byte slice by default context
     ///

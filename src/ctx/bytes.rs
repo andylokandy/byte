@@ -1,6 +1,8 @@
 use {TryRead, TryWrite, Error, Result, check_len};
 
 /// Context for &[u8] to determine where the slice ends.
+/// 
+/// Pattern will be included in the result
 ///
 /// # Example
 ///

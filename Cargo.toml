@@ -1,10 +1,10 @@
 [package]
 name = "byte"
-version = "0.2.2"
+version = "0.2.3"
 authors = ["goandylok"]
 license = "MIT/Apache-2.0"
 
-description = "A low-level, zero-copy, panic-free, binary serializer and deserializer. (parser and encoder)"
+description = "A low-level, zero-copy, panic-free, binary serializer and deserializer."
 documentation = "https://docs.rs/byte"
 repository = "https://github.com/goandylok/byte"
 homepage = "https://github.com/goandylok/byte"
