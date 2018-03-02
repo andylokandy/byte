@@ -287,7 +287,10 @@ pub trait BytesExt<Ctx> {
     /// ```
     fn read<'a, T>(&'a self, offset: &mut usize) -> Result<T>
         where T: TryRead<'a, Ctx>,
-              Ctx: Default;
+              Ctx: Default
+    {
+        self.read_with(offset, Default::default())
+    }
 
     /// Read value from byte slice with context
     ///
@@ -346,7 +349,10 @@ pub trait BytesExt<Ctx> {
     /// ```
     fn write<T>(&mut self, offset: &mut usize, t: T) -> Result<()>
         where T: TryWrite<Ctx>,
-              Ctx: Default;
+              Ctx: Default
+    {
+        self.write_with(offset, t, Default::default())
+    }
 
     /// Write value into byte slice with context
     ///
@@ -371,13 +377,6 @@ pub trait BytesExt<Ctx> {
 
 
 impl<Ctx> BytesExt<Ctx> for [u8] {
-    fn read<'a, T>(&'a self, offset: &mut usize) -> Result<T>
-        where T: TryRead<'a, Ctx>,
-              Ctx: Default
-    {
-        self.read_with(offset, Default::default())
-    }
-
     #[inline]
     fn read_with<'a, T>(&'a self, offset: &mut usize, ctx: Ctx) -> Result<T>
         where T: TryRead<'a, Ctx>
@@ -388,15 +387,14 @@ impl<Ctx> BytesExt<Ctx> for [u8] {
             return Err(Error::BadOffset(*offset));
         };
 
-        TryRead::try_read(&slice[*offset..], ctx)
-            .map(|(t, size)| {
-                     *offset += size;
-                     t
-                 })
-            .map_err(|err| match err {
-                         Error::BadOffset(_) => Error::Incomplete,
-                         err => err,
-                     })
+        match TryRead::try_read(&slice[*offset..], ctx) {
+            Ok((t, size)) => {
+                *offset += size;
+                Ok(t)
+            },
+            Err(Error::BadOffset(_)) => Err(Error::Incomplete),
+            Err(err) => Err(err),
+        }
     }
 
     fn read_iter<'a, 'i, T>(&'a self, offset: &'i mut usize, ctx: Ctx) -> Iter<'a, 'i, T, Ctx>
@@ -411,13 +409,6 @@ impl<Ctx> BytesExt<Ctx> for [u8] {
         }
     }
 
-    fn write<T>(&mut self, offset: &mut usize, t: T) -> Result<()>
-        where T: TryWrite<Ctx>,
-              Ctx: Default
-    {
-        self.write_with(offset, t, Default::default())
-    }
-
     fn write_with<T>(&mut self, offset: &mut usize, t: T, ctx: Ctx) -> Result<()>
         where T: TryWrite<Ctx>
     {
@@ -427,15 +418,14 @@ impl<Ctx> BytesExt<Ctx> for [u8] {
             return Err(Error::BadOffset(*offset));
         };
 
-        TryWrite::try_write(t, &mut slice[*offset..], ctx)
-            .map(|size| {
-                     *offset += size;
-                     ()
-                 })
-            .map_err(|err| match err {
-                         Error::BadOffset(_) => Error::Incomplete,
-                         err => err,
-                     })
+        match TryWrite::try_write(t, &mut slice[*offset..], ctx) {
+            Ok(size) => {
+                *offset += size;
+                Ok(())
+            },
+            Err(Error::BadOffset(_)) => Err(Error::Incomplete),
+            Err(err) => Err(err),
+        }
     }
 }
 

@@ -78,9 +78,10 @@ impl<'a> TryRead<'a, Str> for &'a str {
             }
         };
 
-        str::from_utf8(bytes)
-            .map(|str| (str, size))
-            .map_err(|_| Error::BadInput { err: "UTF8 Error" })
+        match str::from_utf8(bytes) {
+            Ok(str) => Ok((str, size)),
+            Err(_) => Err(Error::BadInput { err: "UTF8 Error" })
+        }
     }
 }
 
