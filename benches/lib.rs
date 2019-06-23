@@ -4,10 +4,10 @@ extern crate byte;
 extern crate byteorder;
 extern crate test;
 
-use test::black_box;
-use byteorder::*;
-use byte::*;
 use byte::ctx::*;
+use byte::*;
+use byteorder::*;
+use test::black_box;
 
 #[bench]
 fn bench_byteorder(b: &mut test::Bencher) {
@@ -56,7 +56,7 @@ fn bench_example_write(b: &mut test::Bencher) {
             name: "HELLO",
             enabled: false,
         });
-        bytes.write_with::<Header>(&mut 0, header, BE).unwrap();
+        bytes.write_with::<Header>(&mut 0, header, BE).unwrap()
     });
     b.bytes = 8;
 }
@@ -76,7 +76,7 @@ fn bench_example_write_hardcode(b: &mut test::Bencher) {
             name: "HELLO",
             enabled: false,
         });
-        example_write_hardcode(&mut bytes[..], header).unwrap();
+        example_write_hardcode(&mut bytes[..], header).unwrap()
     });
     b.bytes = 8;
 }

@@ -1,10 +1,10 @@
-use {TryRead, TryWrite, Error, Result, check_len};
 use core::str;
+use {check_len, Error, Result, TryRead, TryWrite};
 
 /// Context for &str to determine where a &str ends.
 ///
 /// Pattern will **not** be included in the result
-/// 
+///
 /// Default to `NULL` delimiter.
 ///
 /// # Example
@@ -82,7 +82,7 @@ impl<'a> TryRead<'a, Str> for &'a str {
 
         match str::from_utf8(bytes) {
             Ok(str) => Ok((str, size)),
-            Err(_) => Err(Error::BadInput { err: "UTF8 Error" })
+            Err(_) => Err(Error::BadInput { err: "UTF8 Error" }),
         }
     }
 }

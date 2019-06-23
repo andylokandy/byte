@@ -1,15 +1,16 @@
 [package]
 name = "byte"
-version = "0.2.3"
-authors = ["goandylok"]
+version = "0.2.4"
+authors = ["andylokandy"]
 license = "MIT/Apache-2.0"
 
-description = "A low-level, zero-copy, panic-free, binary serializer and deserializer."
+description = "A low-level, zero-copy and panic-free serializer and deserializer for binary."
 documentation = "https://docs.rs/byte"
-repository = "https://github.com/goandylok/byte"
-homepage = "https://github.com/goandylok/byte"
+repository = "https://github.com/andylokandy/byte"
+homepage = "https://github.com/andylokandy/byte"
+readme = "README.md"
 
-keywords = ["binary", "parser", "decode", "encode", "no_std"]
+keywords = ["binary", "parser", "bytes", "scroll", "no_std"]
 categories = ["no-std", "embedded", "encoding", "parsing"]
 
 [dev-dependencies]

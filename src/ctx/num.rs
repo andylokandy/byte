@@ -1,7 +1,7 @@
 #![allow(unused_parens)]
 
-use {TryRead, TryWrite, Result, check_len};
 use core::mem;
+use {check_len, Result, TryRead, TryWrite};
 
 /// Endian of numbers.
 ///
@@ -52,7 +52,6 @@ pub const NATIVE: Endian = BE;
 
 macro_rules! num_impl {
     ($ty: ty, $size: tt) => {
-
         impl<'a> TryRead<'a, Endian> for $ty {
             #[inline]
             fn try_read(bytes: &'a [u8], endian: Endian) -> Result<(Self, usize)> {
@@ -83,8 +82,7 @@ macro_rules! num_impl {
                 Ok($size)
             }
         }
-
-    }
+    };
 }
 
 num_impl!(u8, 1);
@@ -100,7 +98,6 @@ num_impl!(isize, (mem::size_of::<isize>()));
 
 macro_rules! float_impl {
     ($ty: ty, $base: ty) => {
-
         impl<'a> TryRead<'a, Endian> for $ty {
             #[inline]
             fn try_read(bytes: &'a [u8], endian: Endian) -> Result<(Self, usize)> {
@@ -112,11 +109,14 @@ macro_rules! float_impl {
         impl<'a> TryWrite<Endian> for $ty {
             #[inline]
             fn try_write(self, bytes: &mut [u8], endian: Endian) -> Result<usize> {
-                <$base as TryWrite<Endian>>::try_write(unsafe { mem::transmute(self) }, bytes, endian)
+                <$base as TryWrite<Endian>>::try_write(
+                    unsafe { mem::transmute(self) },
+                    bytes,
+                    endian,
+                )
             }
         }
-
-    }
+    };
 }
 
 float_impl!(f32, u32);

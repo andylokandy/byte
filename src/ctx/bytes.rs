@@ -1,7 +1,7 @@
-use {TryRead, TryWrite, Error, Result, check_len};
+use {check_len, Error, Result, TryRead, TryWrite};
 
 /// Context for &[u8] to determine where the slice ends.
-/// 
+///
 /// Pattern will be included in the result
 ///
 /// # Example
@@ -40,7 +40,9 @@ impl<'a> TryRead<'a, Bytes> for &'a [u8] {
             Bytes::Len(len) => check_len(bytes, len)?,
             Bytes::Pattern(pattern) => {
                 if pattern.len() == 0 {
-                    return Err(Error::BadInput { err: "Pattern is empty" });
+                    return Err(Error::BadInput {
+                        err: "Pattern is empty",
+                    });
                 }
                 check_len(bytes, pattern.len())?;
                 (0..bytes.len() - pattern.len() + 1)
@@ -51,10 +53,14 @@ impl<'a> TryRead<'a, Bytes> for &'a [u8] {
             }
             Bytes::PatternUntil(pattern, len) => {
                 if pattern.len() == 0 {
-                    return Err(Error::BadInput { err: "Pattern is empty" });
+                    return Err(Error::BadInput {
+                        err: "Pattern is empty",
+                    });
                 }
                 if pattern.len() > len {
-                    return Err(Error::BadInput { err: "Pattern is longer than restricted length" });
+                    return Err(Error::BadInput {
+                        err: "Pattern is longer than restricted length",
+                    });
                 }
                 check_len(bytes, pattern.len())?;
                 (0..bytes.len() - pattern.len() + 1)

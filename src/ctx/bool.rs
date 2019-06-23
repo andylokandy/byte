@@ -1,4 +1,4 @@
-use {TryRead, TryWrite, Result, check_len};
+use {check_len, Result, TryRead, TryWrite};
 
 impl<'a> TryRead<'a> for bool {
     #[inline]

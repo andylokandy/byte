@@ -4,9 +4,7 @@
 [![crates.io](https://img.shields.io/crates/v/byte.svg)](https://crates.io/crates/byte)
 [![docs.rs](https://docs.rs/byte/badge.svg)](https://docs.rs/byte)
 
-A low-level, zero-copy, panic-free, binary serializer and deserializer
-
-This crate is inspired by [**m4b/scroll**](https://github.com/m4b/scroll)
+A low-level, zero-copy and panic-free serializer and deserializer for binary.
 
 ### [**Documentation**](https://docs.rs/byte)
 
@@ -30,17 +28,13 @@ extern crate byte;
 
 # Overview
 
-`Byte` is mainly used to encode and decode binary data with standard or protocol,
-such as network TCP packages and hardware communication packages.
-It's similar to crate `nom` but more ligthweight and specialized for operating binary in low-level and hardware programing.
+`Byte` is designed to encode or decode binary data in a fast and low-level way.
+A classical use case is I2C communication en/decoding.
 
-`Byte` delivers two core traits `TryRead` and `TryWrite`.
-Types implement these traits can be serialize into or deserialize from byte slices.
-Byte slices `[u8]` derives methods `read()` and `write()` to serialize, deserialize and handle offset.
+`Byte` provides two core traits `TryRead` and `TryWrite`.
+Types that implement these traits can be serialize into or deserialize from byte slices.
 
-Small and general is kept in mind in this library.
-For example, `Byte` can take byte slice from [**MMap**](https://crates.io/crates/mmap) to read binary file,
-or take heap-allocated byte buffer from [**Bytes**](https://github.com/carllerche/bytes).
+The library is meant to be simple, and it will always be.
 
 
 # Example
