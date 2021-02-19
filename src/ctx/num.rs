@@ -2,7 +2,7 @@
 
 use core::convert::TryInto;
 use core::mem;
-use {check_len, Result, TryRead, TryWrite};
+use {check_len, Error, Result, TryRead, TryWrite};
 
 /// Endian of numbers.
 ///
@@ -59,8 +59,16 @@ macro_rules! num_impl {
                 check_len(bytes, $size)?;
 
                 let val = match endian {
-                    Endian::Big => <$ty>::from_be_bytes(bytes[..$size].try_into().unwrap()),
-                    Endian::Little => <$ty>::from_le_bytes(bytes[..$size].try_into().unwrap()),
+                    Endian::Big => {
+                      <$ty>::from_be_bytes(bytes[..$size].try_into().map_err(|e| Error::BadInput {
+                        err: "TryIntoSliceError",
+                      })?)
+                    }
+                    Endian::Little => {
+                      <$ty>::from_le_bytes(bytes[..$size].try_into().map_err(|e| Error::BadInput {
+                        err: "TryIntoSliceError",
+                      })?)
+                    }
                 };
 
                 Ok((val, $size))
