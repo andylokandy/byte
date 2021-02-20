@@ -1,7 +1,8 @@
 #![allow(unused_parens)]
 
+use core::convert::TryInto;
 use core::mem;
-use {check_len, Result, TryRead, TryWrite};
+use {check_len, Error, Result, TryRead, TryWrite};
 
 /// Endian of numbers.
 ///
@@ -57,10 +58,17 @@ macro_rules! num_impl {
             fn try_read(bytes: &'a [u8], endian: Endian) -> Result<(Self, usize)> {
                 check_len(bytes, $size)?;
 
-                let val: $ty = unsafe { *(&bytes[0] as *const _ as *const _) };
                 let val = match endian {
-                    Endian::Big => val.to_be(),
-                    Endian::Little => val.to_le(),
+                    Endian::Big => {
+                      <$ty>::from_be_bytes(bytes[..$size].try_into().map_err(|e| Error::BadInput {
+                        err: "TryIntoSliceError",
+                      })?)
+                    }
+                    Endian::Little => {
+                      <$ty>::from_le_bytes(bytes[..$size].try_into().map_err(|e| Error::BadInput {
+                        err: "TryIntoSliceError",
+                      })?)
+                    }
                 };
 
                 Ok((val, $size))
@@ -73,11 +81,9 @@ macro_rules! num_impl {
                 check_len(bytes, $size)?;
 
                 let val = match endian {
-                    Endian::Big => self.to_be(),
-                    Endian::Little => self.to_le(),
+                    Endian::Big => bytes[..$size].copy_from_slice(&self.to_be_bytes()),
+                    Endian::Little => bytes[..$size].copy_from_slice(&self.to_le_bytes()),
                 };
-
-                unsafe { *(&mut bytes[0] as *mut _ as *mut _) = val };
 
                 Ok($size)
             }
