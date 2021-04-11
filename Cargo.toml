@@ -1,6 +1,6 @@
 [package]
 name = "byte"
-version = "0.2.4"
+version = "0.2.6"
 authors = ["andylokandy"]
 license = "MIT/Apache-2.0"
 

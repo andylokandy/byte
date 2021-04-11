@@ -60,12 +60,12 @@ macro_rules! num_impl {
 
                 let val = match endian {
                     Endian::Big => {
-                      <$ty>::from_be_bytes(bytes[..$size].try_into().map_err(|e| Error::BadInput {
+                      <$ty>::from_be_bytes(bytes[..$size].try_into().map_err(|_e| Error::BadInput {
                         err: "TryIntoSliceError",
                       })?)
                     }
                     Endian::Little => {
-                      <$ty>::from_le_bytes(bytes[..$size].try_into().map_err(|e| Error::BadInput {
+                      <$ty>::from_le_bytes(bytes[..$size].try_into().map_err(|_e| Error::BadInput {
                         err: "TryIntoSliceError",
                       })?)
                     }
@@ -80,7 +80,7 @@ macro_rules! num_impl {
             fn try_write(self, bytes: &mut [u8], endian: Endian) -> Result<usize> {
                 check_len(bytes, $size)?;
 
-                let val = match endian {
+                let _val = match endian {
                     Endian::Big => bytes[..$size].copy_from_slice(&self.to_be_bytes()),
                     Endian::Little => bytes[..$size].copy_from_slice(&self.to_le_bytes()),
                 };
