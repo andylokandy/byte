@@ -1,4 +1,4 @@
-//! A low-level, zero-copy and panic-free serializer and deserializer for binary.
+//! A low-level, zero-copy and panic-free binary serializer and deserializer.
 //!
 //! # Usage
 //!
@@ -9,14 +9,7 @@
 //! byte = "0.3"
 //! ```
 //!
-//! Next, add this to your crate root:
-//!
-//! ```
-//! extern crate byte;
-//! ```
-//!
-//! `Byte` is `no_std` library; it can directly be used in a `#![no_std]` situation or crate.
-//!
+//! `Byte` is a `no_std` library; it can be used in any `#![no_std]` situation or crate.
 //!
 //! # Overview
 //!
@@ -24,13 +17,13 @@
 //! A classical use case is I2C communication packages encoding.
 //!
 //! `Byte` provides two core traits `TryRead` and `TryWrite`.
-//! Types implement these traits can be serialize into or deserialize from byte slices.
+//! Types implement these traits can be serialized into or deserialized from byte slices.
 //!
 //! The library is meant to be simple, and it will always be.
 //!
-//! # Example
+//! # Examples
 //!
-//! In this examples, we deserialize a u32 from bytes.
+//! Deserialize a `u32` from bytes:
 //!
 //! ```
 //! use byte::*;
@@ -43,7 +36,7 @@
 //! assert_eq!(*offset, 4);
 //! ```
 //!
-//! Deserialize a str from bytes:
+//! Deserialize a `&str` from bytes:
 //!
 //! ```
 //! use byte::*;
@@ -59,28 +52,28 @@
 //!
 //! `Byte` supports serializing and deserializing language primitives by default.
 //!
-//! - `&str` (with context `Str`)
-//! - `&[u8]` (with context `Byte`)
-//! - `u8`, `i8`, `u64`, `f64` ... (with context `Endian`)
+//! - `&str` (with `Str` context)
+//! - `&[u8]` (with `Byte` context)
+//! - `u8`, `i8`, `u64`, `f64` ... (with `Endian` context)
 //! - `bool`
 //!
-//! # Define custom serializable/deserializable type
+//! # Define custom serializable/deserializable types
 //!
-//! In this example, we implement `TryRead` and `TryWrite` for type `Header`, which have a
-//! varibal-length name and a boolean field.
+//! In this example, we implement `TryRead` and `TryWrite` for the `Header` type,
+//! which has a variable-length name and a boolean field.
 //!
 //! ## Binary Structure
 //!
 //! ```text
-//! |       | Length of name (Big Endian) |                Name              | Enabled |
-//! | ----- | --------------------------- | ---- | ---- | ---- | ---- | ---- | ------- |
-//! | Byte  | 0            | 5            | 'H'  | 'E'  | 'L'  | 'L'  | 'O'  | 0       |
+//! |       | Name's Length (Big Endian) |                Name              | Enabled |
+//! | ----- | -------------------------- | ---- | ---- | ---- | ---- | ---- | ------- |
+//! | Byte  | 0            | 5           | 'H'  | 'E'  | 'L'  | 'L'  | 'O'  | 0       |
 //! ```
 //!
 //! ## Example
 //!
-//! The only thing you may be curious to is the returned usize; it's the number
-//! of bytes the read/write operation consumed.
+//! The only thing you may be curious about is the returned usize;
+//! that's the number of bytes consumed by the read/write operation.
 //!
 //! ```
 //! use byte::*;
@@ -134,6 +127,7 @@
 //! ```
 
 #![no_std]
+#![forbid(unsafe_code)]
 
 pub mod ctx;
 use core::marker::PhantomData;
@@ -142,19 +136,19 @@ pub use ctx::{BE, LE};
 /// A specialized Result type for `Byte`
 pub type Result<T> = core::result::Result<T, Error>;
 
-/// The error type for `byte` crate.
+/// The error type for the `byte` crate.
 ///
-/// - `Error::BadOffset` will be returned when the offset parameter exceedes slice's length.
+/// - `Error::BadOffset` will be returned when the offset parameter exceeds the slice's length.
 ///
-/// - `Error::BadInput` and `Error::Incomplete` will be returned when `try_read()` and `try_write()`
-/// finds the bytes is not valid or not long enough to determin whether it's valid.
+/// - `Error::BadInput` and `Error::Incomplete` will be returned when `try_read()` or
+/// `try_write()` finds the bytes are invalid or not long enough to determine their validity.
 ///
-/// Note that we usually use `bytes.read()` in `try_read()` which may returns `Error::BadOffset`,
-/// which indicates an incomplete data. So the error will automatically be converted into
-/// `Error::Incomplete` if you use `bytes.read()`. (same for `write()`)
+/// Note that we usually use `bytes.read()` in `try_read()` which may return `Error::BadOffset`,
+/// indicating incomplete data. So the error will automatically be converted into
+/// `Error::Incomplete` if you use `bytes.read()` (the same applies to `write()`).
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum Error {
-    /// The requested data is bigger than available range
+    /// The requested data is bigger than the available range
     Incomplete,
     /// The offset is invalid
     BadOffset(usize),
@@ -162,8 +156,8 @@ pub enum Error {
     BadInput { err: &'static str },
 }
 
-/// A helper function that checks whether the given length
-/// exceeded the length of slice; return `Err(Error::Incomplete)` if not.
+/// A helper function that checks whether the given length exceeded the length
+/// of the slice; returns `Err(Error::Incomplete)` otherwise.
 ///
 /// # Example
 ///
@@ -183,15 +177,18 @@ pub fn check_len(bytes: &[u8], len: usize) -> Result<usize> {
     }
 }
 
-/// A data structure that can be deserialized. Types implement this trait can be `read()` from byte slice.
+/// A data structure that can be deserialized.
+/// Types implementing this trait can be `read()` from a byte slice.
 pub trait TryRead<'a, Ctx = ()>
 where
     Self: Sized,
 {
-    /// Try to read from bytes using context.
+    /// Try to read from a byte slice using a specific context.
     ///
-    /// Read the value out of bytes; the bytes passed in is splitted by offset and should be read at head.
-    /// If success, `try_read()` should return a tuple with the value and the number of bytes consumed.
+    /// Read the value out of bytes; the bytes passed in are splitted by offset
+    /// and should be read at head.
+    /// If successful, `try_read()` should return a tuple with the value and the
+    /// number of bytes consumed.
     ///
     /// # Example
     ///
@@ -214,12 +211,14 @@ where
     fn try_read(bytes: &'a [u8], ctx: Ctx) -> Result<(Self, usize)>;
 }
 
-/// A data structure that can be serialized. Types implement this trait can be `write()` into byte slice.
+/// A data structure that can be serialized.
+/// Types implement this trait can be `write()` into a byte slice.
 pub trait TryWrite<Ctx = ()> {
-    /// Try to write to bytes using context.
+    /// Try to write to a byte slice using a specific context.
     ///
-    /// Write the value into bytes; the bytes passed in is splitted by offset and should be write at head.
-    /// If success, `try_write()` should return the number of bytes written.
+    /// Write the value into bytes; the bytes passed in are splitted by offset
+    /// and should be written at head.
+    /// If successful `try_write()` should return the number of bytes written.
     ///
     /// # Example
     ///
@@ -246,11 +245,12 @@ pub trait TryWrite<Ctx = ()> {
 ///
 /// # Offset
 ///
-/// The first parameter of each method is offset,
-/// instructing the position to begin,
-/// which will be increaed by size the operation consumed.
+/// The offset is the first parameter of each method.
+///
+/// It tells the starting position, and will be increased by the number
+/// which will be increased by size the operation consumed.
 pub trait BytesExt<Ctx> {
-    /// Read value from byte slice by default context
+    /// Reads a value from a byte slice using the default context.
     ///
     /// # Example
     ///
@@ -273,7 +273,7 @@ pub trait BytesExt<Ctx> {
         self.read_with(offset, Default::default())
     }
 
-    /// Read value from byte slice with context
+    /// Reads a value from a byte slice specifying the context.
     ///
     /// # Example
     ///
@@ -290,7 +290,7 @@ pub trait BytesExt<Ctx> {
     where
         T: TryRead<'a, Ctx>;
 
-    /// Read multiple values of same type by iterator.
+    /// Reads multiple values of the same type using an iterator.
     ///
     /// # Example
     ///
@@ -315,7 +315,7 @@ pub trait BytesExt<Ctx> {
         T: TryRead<'a, Ctx>,
         Ctx: Clone;
 
-    /// Write value into byte slice by default context
+    /// Writes a value into a byte slice using the default context.
     ///
     /// # Example
     ///
@@ -337,7 +337,7 @@ pub trait BytesExt<Ctx> {
         self.write_with(offset, t, Default::default())
     }
 
-    /// Write value into byte slice with context
+    /// Writes a value into a byte slice specifiying the context.
     ///
     /// # Example
     ///
@@ -365,7 +365,7 @@ impl<Ctx> BytesExt<Ctx> for [u8] {
     where
         T: TryRead<'a, Ctx>,
     {
-        let slice = self.as_ref();
+        let slice = self;
 
         if *offset >= slice.len() {
             return Err(Error::BadOffset(*offset));
@@ -387,9 +387,9 @@ impl<Ctx> BytesExt<Ctx> for [u8] {
         Ctx: Clone,
     {
         Iter {
-            bytes: self.as_ref(),
-            offset: offset,
-            ctx: ctx,
+            bytes: self,
+            offset,
+            ctx,
             phantom: PhantomData,
         }
     }
@@ -398,7 +398,7 @@ impl<Ctx> BytesExt<Ctx> for [u8] {
     where
         T: TryWrite<Ctx>,
     {
-        let slice = self.as_mut();
+        let slice = self;
 
         if *offset >= slice.len() {
             return Err(Error::BadOffset(*offset));
@@ -415,7 +415,7 @@ impl<Ctx> BytesExt<Ctx> for [u8] {
     }
 }
 
-/// Iterator that read values of same type from bytes.
+/// An iterator that reads values of the same type from a byte slice.
 ///
 /// # Example
 ///

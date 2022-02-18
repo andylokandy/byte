@@ -1,5 +1,5 @@
+use crate::{check_len, Error, Result, TryRead, TryWrite};
 use core::str;
-use {check_len, Error, Result, TryRead, TryWrite};
 
 /// Context for &str to determine where a &str ends.
 ///

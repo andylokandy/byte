@@ -4,26 +4,19 @@
 [![crates.io](https://img.shields.io/crates/v/byte.svg)](https://crates.io/crates/byte)
 [![docs.rs](https://docs.rs/byte/badge.svg)](https://docs.rs/byte)
 
-A low-level, zero-copy and panic-free serializer and deserializer for binary.
+A low-level, zero-copy and panic-free binary serializer and deserializer.
 
 ### [**Documentation**](https://docs.rs/byte)
 
 ## Usage
 
-First, add the following to your `Cargo.toml`:
-
+Add the following to your `Cargo.toml`:
 ```toml
 [dependencies]
 byte = "0.2"
 ```
 
-Next, add this to your crate root:
-
-```rust
-extern crate byte;
-```
-
-`Byte` is `no_std` library; it can directly be used in a `#![no_std]` situation or crate.
+`Byte` is a `no_std` library; it can be used in any `#![no_std]` situation or crate.
 
 
 # Overview
@@ -32,7 +25,7 @@ extern crate byte;
 A classical use case is I2C communication en/decoding.
 
 `Byte` provides two core traits `TryRead` and `TryWrite`.
-Types that implement these traits can be serialize into or deserialize from byte slices.
+Types that implement these traits can be serialized into or deserialized from byte slices.
 
 The library is meant to be simple, and it will always be.
 

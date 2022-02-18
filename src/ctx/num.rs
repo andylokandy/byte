@@ -1,12 +1,12 @@
 #![allow(unused_parens)]
 
+use crate::{check_len, Error, Result, TryRead, TryWrite};
 use core::convert::TryInto;
 use core::mem;
-use {check_len, Error, Result, TryRead, TryWrite};
 
-/// Endian of numbers.
+/// Endiannes of numbers.
 ///
-/// Default to machine's native endian.
+/// Defaults to the machine's endianness.
 ///
 /// # Example
 ///
@@ -36,18 +36,18 @@ impl Default for Endian {
     }
 }
 
-/// Little Endian byte order
+/// Little endian byte order
 pub const LE: Endian = Endian::Little;
-/// Big Endian byte order
+/// Big endian byte order
 pub const BE: Endian = Endian::Big;
 
 /// Network endian
 pub const NETWORK: Endian = Endian::Little;
 
-/// The machine's native endian
+/// The machine's native endianness
 #[cfg(target_endian = "little")]
 pub const NATIVE: Endian = LE;
-/// The machine's native endian
+/// The machine's native endiannes
 #[cfg(target_endian = "big")]
 pub const NATIVE: Endian = BE;
 
@@ -60,14 +60,18 @@ macro_rules! num_impl {
 
                 let val = match endian {
                     Endian::Big => {
-                      <$ty>::from_be_bytes(bytes[..$size].try_into().map_err(|_e| Error::BadInput {
-                        err: "TryIntoSliceError",
-                      })?)
+                        <$ty>::from_be_bytes(bytes[..$size].try_into().map_err(|_e| {
+                            Error::BadInput {
+                                err: "TryIntoSliceError",
+                            }
+                        })?)
                     }
                     Endian::Little => {
-                      <$ty>::from_le_bytes(bytes[..$size].try_into().map_err(|_e| Error::BadInput {
-                        err: "TryIntoSliceError",
-                      })?)
+                        <$ty>::from_le_bytes(bytes[..$size].try_into().map_err(|_e| {
+                            Error::BadInput {
+                                err: "TryIntoSliceError",
+                            }
+                        })?)
                     }
                 };
 
@@ -108,18 +112,14 @@ macro_rules! float_impl {
             #[inline]
             fn try_read(bytes: &'a [u8], endian: Endian) -> Result<(Self, usize)> {
                 <$base as TryRead<'a, Endian>>::try_read(bytes, endian)
-                    .map(|(val, size)| (unsafe { mem::transmute(val) }, size))
+                    .map(|(val, size)| (<$ty>::from_bits(val), size))
             }
         }
 
         impl<'a> TryWrite<Endian> for $ty {
             #[inline]
             fn try_write(self, bytes: &mut [u8], endian: Endian) -> Result<usize> {
-                <$base as TryWrite<Endian>>::try_write(
-                    unsafe { mem::transmute(self) },
-                    bytes,
-                    endian,
-                )
+                <$base as TryWrite<Endian>>::try_write(self.to_bits(), bytes, endian)
             }
         }
     };
