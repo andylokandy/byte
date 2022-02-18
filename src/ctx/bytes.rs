@@ -1,4 +1,4 @@
-use {check_len, Error, Result, TryRead, TryWrite};
+use crate::{check_len, Error, Result, TryRead, TryWrite};
 
 /// Context for &[u8] to determine where the slice ends.
 ///
@@ -39,7 +39,7 @@ impl<'a> TryRead<'a, Bytes> for &'a [u8] {
         let len = match ctx {
             Bytes::Len(len) => check_len(bytes, len)?,
             Bytes::Pattern(pattern) => {
-                if pattern.len() == 0 {
+                if pattern.is_empty() {
                     return Err(Error::BadInput {
                         err: "Pattern is empty",
                     });
@@ -52,7 +52,7 @@ impl<'a> TryRead<'a, Bytes> for &'a [u8] {
                     .ok_or(Error::Incomplete)?
             }
             Bytes::PatternUntil(pattern, len) => {
-                if pattern.len() == 0 {
+                if pattern.is_empty() {
                     return Err(Error::BadInput {
                         err: "Pattern is empty",
                     });

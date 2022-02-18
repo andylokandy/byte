@@ -1,4 +1,4 @@
-use {check_len, Result, TryRead, TryWrite};
+use crate::{check_len, Result, TryRead, TryWrite};
 
 impl<'a> TryRead<'a> for bool {
     #[inline]
