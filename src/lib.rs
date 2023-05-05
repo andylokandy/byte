@@ -367,7 +367,7 @@ impl<Ctx> BytesExt<Ctx> for [u8] {
     {
         let slice = self;
 
-        if *offset >= slice.len() {
+        if *offset > slice.len() {
             return Err(Error::BadOffset(*offset));
         };
 
@@ -400,7 +400,7 @@ impl<Ctx> BytesExt<Ctx> for [u8] {
     {
         let slice = self;
 
-        if *offset >= slice.len() {
+        if *offset > slice.len() {
             return Err(Error::BadOffset(*offset));
         };
 
