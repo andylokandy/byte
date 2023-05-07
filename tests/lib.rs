@@ -327,3 +327,45 @@ fn test_api() {
     write.write_with(&mut 0, header, BE).unwrap();
     assert_eq!(write, bytes);
 }
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct Empty;
+
+impl<'a> TryRead<'a, ()> for Empty {
+    fn try_read(bytes: &'a [u8], _ctx: ()) -> Result<(Self, usize)> {
+        Ok((Self, 0))
+    }
+}
+
+impl TryWrite<()> for Empty {
+    fn try_write(self, bytes: &mut [u8], _ctx: ()) -> Result<usize> {
+        Ok(0)
+    }
+}
+
+#[test]
+fn test_empty() {
+    let empty_bytes: [u8; 0] = [];
+    let mut offset = 0;
+    let empty: Empty = empty_bytes.read(&mut offset).unwrap();
+    assert_eq!(empty, Empty);
+    assert_eq!(offset, 0);
+
+    let zero_bytes = [0; 8];
+    let mut offset = 0;
+    let empty: Empty = zero_bytes.read(&mut offset).unwrap();
+    assert_eq!(empty, Empty);
+    assert_eq!(offset, 0);
+
+    let mut write_empty_bytes: [u8; 0] = [];
+    let mut offset = 0;
+    write_empty_bytes.write(&mut offset, Empty).unwrap();
+    assert_eq!(write_empty_bytes, empty_bytes);
+    assert_eq!(offset, 0);
+
+    let mut write_zero_bytes = [0u8; 4];
+    let mut offset = 0;
+    write_zero_bytes.write(&mut offset, Empty).unwrap();
+    assert_eq!(write_zero_bytes, [0u8; 4]);
+    assert_eq!(offset, 0);
+}
