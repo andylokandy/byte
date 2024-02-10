@@ -40,12 +40,12 @@
 //!
 //! ```
 //! use byte::*;
-//! use byte::ctx::{Str, NULL};
+//! use byte::ctx::{Delimiter, NULL};
 //!
 //! let bytes: &[u8] = b"hello, world!\0dump";
 //!
 //! let offset = &mut 0;
-//! let str = bytes.read_with::<&str>(offset, Str::Delimiter(NULL)).unwrap();
+//! let str = bytes.read_with::<&str>(offset, Delimiter(NULL)).unwrap();
 //! assert_eq!(str, "hello, world!");
 //! assert_eq!(*offset, 14);
 //! ```
@@ -84,13 +84,13 @@
 //!     enabled: bool,
 //! }
 //!
-//! impl<'a> TryRead<'a, Endian> for Header<'a> {
-//!     fn try_read(bytes: &'a [u8], endian: Endian) -> Result<(Self, usize)> {
+//! impl<'a, Ctx: Endianess> TryRead<'a, Ctx> for Header<'a> {
+//!     fn try_read(bytes: &'a [u8], endian: Ctx) -> Result<(Self, usize)> {
 //!         let offset = &mut 0;
 //!
 //!         let name_len = bytes.read_with::<u16>(offset, endian)? as usize;
 //!         let header = Header {
-//!             name: bytes.read_with::<&str>(offset, Str::Len(name_len))?,
+//!             name: bytes.read_with::<&str>(offset, Len(name_len))?,
 //!             enabled: bytes.read::<bool>(offset)?,
 //!         };
 //!
@@ -98,8 +98,8 @@
 //!     }
 //! }
 //!
-//! impl<'a> TryWrite<Endian> for Header<'a> {
-//!     fn try_write(self, bytes: &mut [u8], endian: Endian) -> Result<usize> {
+//! impl<'a, Ctx: Endianess> TryWrite<Ctx> for Header<'a> {
+//!     fn try_write(self, bytes: &mut [u8], endian: Ctx) -> Result<usize> {
 //!         let offset = &mut 0;
 //!
 //!         bytes.write_with::<u16>(offset, self.name.len() as u16, endian)?;
@@ -283,7 +283,7 @@ pub trait BytesExt<Ctx> {
     ///
     /// let bytes: &[u8] = b"hello, world!";
     ///
-    /// let str: &str = bytes.read_with(&mut 0, Str::Delimiter(b"!"[0])).unwrap();
+    /// let str: &str = bytes.read_with(&mut 0, Delimiter(b"!"[0])).unwrap();
     /// assert_eq!(str, "hello, world");
     /// ```
     fn read_with<'a, T>(&'a self, offset: &mut usize, ctx: Ctx) -> Result<T>
@@ -301,7 +301,7 @@ pub trait BytesExt<Ctx> {
     /// let bytes: &[u8] = b"hello\0world\0dead\0beef\0more";
     /// let mut offset = 0;
     /// {
-    ///     let mut iter = bytes.read_iter(&mut offset, Str::Delimiter(NULL));
+    ///     let mut iter = bytes.read_iter(&mut offset, Delimiter(NULL));
     ///     assert_eq!(iter.next(), Some("hello"));
     ///     assert_eq!(iter.next(), Some("world"));
     ///     assert_eq!(iter.next(), Some("dead"));
@@ -426,7 +426,7 @@ impl<Ctx> BytesExt<Ctx> for [u8] {
 /// let bytes: &[u8] = b"hello\0world\0dead\0beef\0more";
 /// let mut offset = 0;
 /// {
-///     let mut iter = bytes.read_iter(&mut offset, Str::Delimiter(NULL));
+///     let mut iter = bytes.read_iter(&mut offset, Delimiter(NULL));
 ///     assert_eq!(iter.next(), Some("hello"));
 ///     assert_eq!(iter.next(), Some("world"));
 ///     assert_eq!(iter.next(), Some("dead"));

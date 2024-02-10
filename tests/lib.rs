@@ -14,7 +14,7 @@ fn test_str() {
     let mut offset = 0;
     assert_eq!(
         bytes
-            .read_with::<&str>(&mut offset, Str::Delimiter(NULL))
+            .read_with::<&str>(&mut offset, Delimiter(NULL))
             .unwrap(),
         "abcd"
     );
@@ -22,98 +22,91 @@ fn test_str() {
 
     let bytes: &[u8] = b"abcdefghijklmnopqrstuvwxyz";
     assert_eq!(
-        TryRead::try_read(bytes, Str::Len(15)).unwrap(),
+        TryRead::try_read(bytes, Len(15)).unwrap(),
         ("abcdefghijklmno", 15)
     );
     assert_eq!(
-        TryRead::try_read(bytes, Str::Len(26)).unwrap(),
+        TryRead::try_read(bytes, Len(26)).unwrap(),
         ("abcdefghijklmnopqrstuvwxyz", 26)
     );
 
-    assert!(bytes.read_with::<&str>(&mut 0, Str::Len(27)).is_err());
-    assert!(bytes.read_with::<&str>(&mut 27, Str::Len(0)).is_err());
-    assert!(bytes.read_with::<&str>(&mut 26, Str::Len(1)).is_err());
+    assert!(bytes.read_with::<&str>(&mut 0, Len(27)).is_err());
+    assert!(bytes.read_with::<&str>(&mut 27, Len(0)).is_err());
+    assert!(bytes.read_with::<&str>(&mut 26, Len(1)).is_err());
 }
 
 #[test]
 fn test_str_delimitor() {
     let bytes: &[u8] = b"";
     assert_eq!(
-        TryRead::try_read(bytes, Str::DelimiterUntil(NULL, 0)).unwrap(),
+        TryRead::try_read(bytes, DelimiterUntil(NULL, 0)).unwrap(),
         ("", 0)
     );
 
     let bytes: &[u8] = b"abcdefg";
     assert_eq!(
-        TryRead::try_read(bytes, Str::DelimiterUntil(NULL, 6)).unwrap(),
+        TryRead::try_read(bytes, DelimiterUntil(NULL, 6)).unwrap(),
         ("abcdef", 6)
     );
     assert_eq!(
-        TryRead::try_read(bytes, Str::DelimiterUntil(NULL, 7)).unwrap(),
+        TryRead::try_read(bytes, DelimiterUntil(NULL, 7)).unwrap(),
         ("abcdefg", 7)
     );
 
     let bytes: &[u8] = b"\0abcdefg";
+    assert_eq!(TryRead::try_read(bytes, Delimiter(NULL)).unwrap(), ("", 1));
     assert_eq!(
-        TryRead::try_read(bytes, Str::Delimiter(NULL)).unwrap(),
-        ("", 1)
-    );
-    assert_eq!(
-        TryRead::try_read(bytes, Str::DelimiterUntil(NULL, 0)).unwrap(),
+        TryRead::try_read(bytes, DelimiterUntil(NULL, 0)).unwrap(),
         ("", 0)
     );
     assert_eq!(
-        TryRead::try_read(bytes, Str::DelimiterUntil(NULL, 1)).unwrap(),
+        TryRead::try_read(bytes, DelimiterUntil(NULL, 1)).unwrap(),
         ("", 1)
     );
 
     let bytes: &[u8] = b"abcd\0efg";
     assert_eq!(
-        TryRead::try_read(bytes, Str::Delimiter(NULL)).unwrap(),
+        TryRead::try_read(bytes, Delimiter(NULL)).unwrap(),
         ("abcd", 5)
     );
     assert_eq!(
-        TryRead::try_read(bytes, Str::DelimiterUntil(NULL, 4)).unwrap(),
+        TryRead::try_read(bytes, DelimiterUntil(NULL, 4)).unwrap(),
         ("abcd", 4)
     );
     assert_eq!(
-        TryRead::try_read(bytes, Str::DelimiterUntil(NULL, 5)).unwrap(),
+        TryRead::try_read(bytes, DelimiterUntil(NULL, 5)).unwrap(),
         ("abcd", 5)
     );
     assert_eq!(
-        TryRead::try_read(bytes, Str::DelimiterUntil(NULL, 6)).unwrap(),
+        TryRead::try_read(bytes, DelimiterUntil(NULL, 6)).unwrap(),
         ("abcd", 5)
     );
 
     let bytes: &[u8] = b"abcdefg\0";
     assert_eq!(
-        TryRead::try_read(bytes, Str::Delimiter(NULL)).unwrap(),
+        TryRead::try_read(bytes, Delimiter(NULL)).unwrap(),
         ("abcdefg", 8)
     );
     assert_eq!(
-        TryRead::try_read(bytes, Str::DelimiterUntil(NULL, 8)).unwrap(),
+        TryRead::try_read(bytes, DelimiterUntil(NULL, 8)).unwrap(),
         ("abcdefg", 8)
     );
     assert_eq!(
-        TryRead::try_read(bytes, Str::DelimiterUntil(NULL, 20)).unwrap(),
+        TryRead::try_read(bytes, DelimiterUntil(NULL, 20)).unwrap(),
         ("abcdefg", 8)
     );
 
     let bytes: &[u8] = b"";
+    assert!(bytes.read_with::<&str>(&mut 0, Delimiter(NULL)).is_err());
     assert!(bytes
-        .read_with::<&str>(&mut 0, Str::Delimiter(NULL))
-        .is_err());
-    assert!(bytes
-        .read_with::<&str>(&mut 0, Str::DelimiterUntil(NULL, 1))
+        .read_with::<&str>(&mut 0, DelimiterUntil(NULL, 1))
         .is_err());
 
     let bytes: &[u8] = b"abcdefg";
     assert!(bytes
-        .read_with::<&str>(&mut 0, Str::DelimiterUntil(NULL, 8))
+        .read_with::<&str>(&mut 0, DelimiterUntil(NULL, 8))
         .is_err());
-    assert!(bytes
-        .read_with::<&str>(&mut 0, Str::Delimiter(NULL))
-        .is_err());
+    assert!(bytes.read_with::<&str>(&mut 0, Delimiter(NULL)).is_err());
 }
 
 #[test]
@@ -131,12 +124,9 @@ fn test_str_write() {
 #[test]
 fn test_bytes() {
     let bytes: &[u8] = &[0xde, 0xad, 0xbe, 0xef];
-    assert_eq!(
-        TryRead::try_read(&bytes, Bytes::Len(4)).unwrap(),
-        (&bytes[..], 4)
-    );
+    assert_eq!(TryRead::try_read(&bytes, Len(4)).unwrap(), (&bytes[..], 4));
 
-    assert!(bytes.read_with::<&[u8]>(&mut 5, Bytes::Len(0)).is_err());
+    assert!(bytes.read_with::<&[u8]>(&mut 5, Len(0)).is_err());
 
     let mut write = [0; 5];
     assert_eq!(TryWrite::try_write(bytes, &mut write, ()).unwrap(), 4);
@@ -150,70 +140,64 @@ fn test_bytes_pattern() {
     let bytes: &[u8] = b"abcdefghijk";
 
     assert_eq!(
-        TryRead::try_read(bytes, Bytes::Pattern(b"abc")).unwrap(),
+        TryRead::try_read(bytes, Pattern(b"abc")).unwrap(),
         (&b"abc"[..], 3)
     );
     assert_eq!(
-        TryRead::try_read(bytes, Bytes::Pattern(b"cde")).unwrap(),
+        TryRead::try_read(bytes, Pattern(b"cde")).unwrap(),
         (&b"abcde"[..], 5)
     );
     assert_eq!(
-        TryRead::try_read(bytes, Bytes::Pattern(b"jk")).unwrap(),
+        TryRead::try_read(bytes, Pattern(b"jk")).unwrap(),
         (&b"abcdefghijk"[..], 11)
     );
     assert_eq!(
-        TryRead::try_read(bytes, Bytes::PatternUntil(b"abc", 3)).unwrap(),
+        TryRead::try_read(bytes, PatternUntil(b"abc", 3)).unwrap(),
         (&b"abc"[..], 3)
     );
     assert_eq!(
-        TryRead::try_read(bytes, Bytes::PatternUntil(b"abc", 4)).unwrap(),
+        TryRead::try_read(bytes, PatternUntil(b"abc", 4)).unwrap(),
         (&b"abc"[..], 3)
     );
     assert_eq!(
-        TryRead::try_read(bytes, Bytes::PatternUntil(b"cde", 3)).unwrap(),
+        TryRead::try_read(bytes, PatternUntil(b"cde", 3)).unwrap(),
         (&b"abc"[..], 3)
     );
     assert_eq!(
-        TryRead::try_read(bytes, Bytes::PatternUntil(b"cde", 4)).unwrap(),
+        TryRead::try_read(bytes, PatternUntil(b"cde", 4)).unwrap(),
         (&b"abcd"[..], 4)
     );
     assert_eq!(
-        TryRead::try_read(bytes, Bytes::PatternUntil(b"cde", 5)).unwrap(),
+        TryRead::try_read(bytes, PatternUntil(b"cde", 5)).unwrap(),
         (&b"abcde"[..], 5)
     );
     assert_eq!(
-        TryRead::try_read(bytes, Bytes::PatternUntil(b"cde", 6)).unwrap(),
+        TryRead::try_read(bytes, PatternUntil(b"cde", 6)).unwrap(),
         (&b"abcde"[..], 5)
     );
     assert_eq!(
-        TryRead::try_read(bytes, Bytes::PatternUntil(b"xyz", 5)).unwrap(),
+        TryRead::try_read(bytes, PatternUntil(b"xyz", 5)).unwrap(),
         (&b"abcde"[..], 5)
     );
+    assert!(bytes.read_with::<&[u8]>(&mut 0, Pattern(b"xyz")).is_err());
+    assert!(bytes.read_with::<&[u8]>(&mut 0, Pattern(b"")).is_err());
     assert!(bytes
-        .read_with::<&[u8]>(&mut 0, Bytes::Pattern(b"xyz"))
+        .read_with::<&[u8]>(&mut 0, PatternUntil(b"", 3))
         .is_err());
     assert!(bytes
-        .read_with::<&[u8]>(&mut 0, Bytes::Pattern(b""))
+        .read_with::<&[u8]>(&mut 0, PatternUntil(b"abcd", 3))
         .is_err());
     assert!(bytes
-        .read_with::<&[u8]>(&mut 0, Bytes::PatternUntil(b"", 3))
-        .is_err());
-    assert!(bytes
-        .read_with::<&[u8]>(&mut 0, Bytes::PatternUntil(b"abcd", 3))
-        .is_err());
-    assert!(bytes
-        .read_with::<&[u8]>(&mut 0, Bytes::PatternUntil(b"xyz", 20))
+        .read_with::<&[u8]>(&mut 0, PatternUntil(b"xyz", 20))
         .is_err());
 
     let bytes: &[u8] = b"";
+    assert!(bytes.read_with::<&[u8]>(&mut 0, Pattern(b"xyz")).is_err());
     assert!(bytes
-        .read_with::<&[u8]>(&mut 0, Bytes::Pattern(b"xyz"))
+        .read_with::<&[u8]>(&mut 0, PatternUntil(b"abc", 3))
         .is_err());
     assert!(bytes
-        .read_with::<&[u8]>(&mut 0, Bytes::PatternUntil(b"abc", 3))
-        .is_err());
-    assert!(bytes
-        .read_with::<&[u8]>(&mut 0, Bytes::PatternUntil(b"abc", 4))
+        .read_with::<&[u8]>(&mut 0, PatternUntil(b"abc", 4))
         .is_err());
 }
 
@@ -237,7 +221,7 @@ fn test_iter() {
     let bytes: &[u8] = b"hello\0world\0dead\0beef\0more";
     let mut offset = 0;
     {
-        let mut iter = bytes.read_iter(&mut offset, Str::Delimiter(NULL));
+        let mut iter = bytes.read_iter(&mut offset, Delimiter(NULL));
         assert_eq!(iter.next(), Some("hello"));
         assert_eq!(iter.next(), Some("world"));
         assert_eq!(iter.next(), Some("dead"));
@@ -253,21 +237,21 @@ macro_rules! test_num {
             fn $test_name (num: $ty) -> () {
                 let mut bytes = [0u8; 8];
                 bytes.write_with(&mut 0, num, LE).unwrap();
-                let result = LittleEndian::$byteorder_read_fn(&bytes);
+                let result = byteorder::LittleEndian::$byteorder_read_fn(&bytes);
                 assert_eq!(result, num);
 
                 let mut bytes = [0u8; 8];
-                LittleEndian::$byteorder_write_fn(&mut bytes, num);
+                byteorder::LittleEndian::$byteorder_write_fn(&mut bytes, num);
                 let result: $ty = bytes.read_with(&mut 0, LE).unwrap();
                 assert_eq!(result, num);
 
                 let mut bytes = [0u8; 8];
                 bytes.write_with(&mut 0, num, BE).unwrap();
-                let result = BigEndian::$byteorder_read_fn(&bytes);
+                let result = byteorder::BigEndian::$byteorder_read_fn(&bytes);
                 assert_eq!(result, num);
 
                 let mut bytes = [0u8; 8];
-                BigEndian::$byteorder_write_fn(&mut bytes, num);
+                byteorder::BigEndian::$byteorder_write_fn(&mut bytes, num);
                 let result: $ty = bytes.read_with(&mut 0, BE).unwrap();
                 assert_eq!(result, num);
             }
@@ -289,13 +273,13 @@ struct Header<'a> {
     enabled: bool,
 }
 
-impl<'a> TryRead<'a, Endian> for Header<'a> {
-    fn try_read(bytes: &'a [u8], endian: Endian) -> Result<(Self, usize)> {
+impl<'a, Ctx: Endianess> TryRead<'a, Ctx> for Header<'a> {
+    fn try_read(bytes: &'a [u8], endian: Ctx) -> Result<(Self, usize)> {
         let offset = &mut 0;
 
         let name_len = bytes.read_with::<u16>(offset, endian)? as usize;
         let header = Header {
-            name: bytes.read_with::<&str>(offset, Str::Len(name_len))?,
+            name: bytes.read_with::<&str>(offset, Len(name_len))?,
             enabled: bytes.read(offset)?,
         };
 
@@ -303,8 +287,8 @@ impl<'a> TryRead<'a, Endian> for Header<'a> {
     }
 }
 
-impl<'a> TryWrite<Endian> for Header<'a> {
-    fn try_write(self, bytes: &mut [u8], endian: Endian) -> Result<usize> {
+impl<'a, Ctx: Endianess> TryWrite<Ctx> for Header<'a> {
+    fn try_write(self, bytes: &mut [u8], endian: Ctx) -> Result<usize> {
         let offset = &mut 0;
 
         bytes.write_with(offset, self.name.len() as u16, endian)?;
