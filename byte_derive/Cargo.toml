@@ -1,11 +1,11 @@
 [package]
-name = "byte"
+name = "byte_derive"
 version = "0.2.7"
 edition = "2021"
-authors = ["andylokandy"]
+authors = ["andylokandy", "jekky"]
 license = "MIT/Apache-2.0"
 
-description = "A low-level, zero-copy and panic-free serializer and deserializer for binary."
+description = "Derive macros for the byte crate"
 documentation = "https://docs.rs/byte"
 repository = "https://github.com/andylokandy/byte"
 homepage = "https://github.com/andylokandy/byte"
@@ -14,12 +14,13 @@ readme = "README.md"
 keywords = ["binary", "parser", "bytes", "scroll", "no_std"]
 categories = ["no-std", "embedded", "encoding", "parsing"]
 
-[dev-dependencies]
-quickcheck = "0.3"
-byteorder = "1.0.0"
-
-[features]
-derive = ["dep:byte_derive"]
+[lib]
+proc-macro = true
 
 [dependencies]
-byte_derive = { optional = true, path = "byte_derive" }
+proc-macro2 = "1"
+quote = "1"
+syn = "2"
+
+[dev-dependencies]
+byte = { path = "..", features = ["derive"] }
