@@ -332,13 +332,13 @@ fn test_api() {
 struct Empty;
 
 impl<'a> TryRead<'a, ()> for Empty {
-    fn try_read(bytes: &'a [u8], _ctx: ()) -> Result<(Self, usize)> {
+    fn try_read(_bytes: &'a [u8], _ctx: ()) -> Result<(Self, usize)> {
         Ok((Self, 0))
     }
 }
 
 impl TryWrite<()> for Empty {
-    fn try_write(self, bytes: &mut [u8], _ctx: ()) -> Result<usize> {
+    fn try_write(self, _bytes: &mut [u8], _ctx: ()) -> Result<usize> {
         Ok(0)
     }
 }

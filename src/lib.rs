@@ -133,6 +133,9 @@ pub mod ctx;
 use core::marker::PhantomData;
 pub use ctx::{BE, LE};
 
+#[cfg(feature = "derive")]
+pub use byte_derive::{TryRead, TryWrite};
+
 /// A specialized Result type for `Byte`
 pub type Result<T> = core::result::Result<T, Error>;
 
