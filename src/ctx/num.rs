@@ -1,7 +1,6 @@
 #![allow(unused_parens)]
 
-use crate::{check_len, Error, Result, TryRead, TryWrite};
-use core::convert::TryInto;
+use crate::{check_len, Error, Measure, Result, TryRead, TryWrite};
 use core::mem;
 
 /// Endiannes of numbers.
@@ -53,6 +52,13 @@ pub const NATIVE: Endian = BE;
 
 macro_rules! num_impl {
     ($ty: ty, $size: tt) => {
+        impl<Ctx> Measure<Ctx> for $ty {
+            #[inline]
+            fn measure(self, _: Ctx) -> usize {
+                ::core::mem::size_of::<$ty>()
+            }
+        }
+
         impl<'a> TryRead<'a, Endian> for $ty {
             #[inline]
             fn try_read(bytes: &'a [u8], endian: Endian) -> Result<(Self, usize)> {
@@ -108,6 +114,13 @@ num_impl!(isize, (mem::size_of::<isize>()));
 
 macro_rules! float_impl {
     ($ty: ty, $base: ty) => {
+        impl<Ctx> Measure<Ctx> for $ty {
+            #[inline]
+            fn measure(self, _: Ctx) -> usize {
+                ::core::mem::size_of::<$ty>()
+            }
+        }
+
         impl<'a> TryRead<'a, Endian> for $ty {
             #[inline]
             fn try_read(bytes: &'a [u8], endian: Endian) -> Result<(Self, usize)> {

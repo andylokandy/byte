@@ -1,4 +1,11 @@
-use crate::{check_len, Result, TryRead, TryWrite};
+use crate::{check_len, Measure, Result, TryRead, TryWrite};
+
+impl<Ctx> Measure<Ctx> for bool {
+    #[inline]
+    fn measure(self, _: Ctx) -> usize {
+        1
+    }
+}
 
 impl<'a> TryRead<'a> for bool {
     #[inline]

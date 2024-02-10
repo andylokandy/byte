@@ -218,6 +218,22 @@ fn test_bytes_pattern() {
 }
 
 #[test]
+#[cfg(feature = "alloc")]
+fn test_into_bytes() {
+    assert_eq!("hello world".into_bytes(), Ok(b"hello world".to_vec()));
+    assert_eq!(0xFFu32.into_bytes_with(LE), Ok(vec![0xFF, 0, 0, 0]));
+    assert_eq!(0xFFu32.into_bytes_with(BE), Ok(vec![0, 0, 0, 0xFF]));
+
+    let header = Header {
+        name: "hello world",
+        enabled: true,
+    };
+    let encoded = header.into_bytes_with(BE).unwrap();
+    let decoded = encoded.read_with::<Header>(&mut 0, BE);
+    assert_eq!(Ok(header), decoded);
+}
+
+#[test]
 fn test_bool() {
     let bytes = [0x00, 0x01, 0x80, 0xff];
     assert_eq!(bytes.read::<bool>(&mut 0).unwrap(), false);
@@ -284,9 +300,16 @@ test_num!(test_i64, i64, read_i64, write_i64);
 test_num!(test_f32, f32, read_f32, write_f32);
 test_num!(test_f64, f64, read_f64, write_f64);
 
+#[derive(Debug, Clone, PartialEq, Eq)]
 struct Header<'a> {
     name: &'a str,
     enabled: bool,
+}
+
+impl<Ctx> Measure<Ctx> for &Header<'_> {
+    fn measure(self, _: Ctx) -> usize {
+        2 + self.name.len() + 1
+    }
 }
 
 impl<'a> TryRead<'a, Endian> for Header<'a> {
@@ -303,7 +326,7 @@ impl<'a> TryRead<'a, Endian> for Header<'a> {
     }
 }
 
-impl<'a> TryWrite<Endian> for Header<'a> {
+impl<'a> TryWrite<Endian> for &Header<'a> {
     fn try_write(self, bytes: &mut [u8], endian: Endian) -> Result<usize> {
         let offset = &mut 0;
 
@@ -324,7 +347,7 @@ fn test_api() {
     assert_eq!(header.enabled, false);
 
     let mut write = [0u8; 8];
-    write.write_with(&mut 0, header, BE).unwrap();
+    write.write_with(&mut 0, &header, BE).unwrap();
     assert_eq!(write, bytes);
 }
 
