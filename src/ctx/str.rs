@@ -1,4 +1,4 @@
-use crate::{check_len, Error, Result, TryRead, TryWrite};
+use crate::{check_len, Error, Measure, Result, TryRead, TryWrite};
 use core::str;
 
 /// Context for &str to determine where a &str ends.
@@ -52,6 +52,13 @@ pub const SPACE: u8 = 0x20;
 pub const RET: u8 = 0x0a;
 /// Tab string delimiter
 pub const TAB: u8 = 0x09;
+
+impl Measure for &str {
+    #[inline]
+    fn measure(self, _: ()) -> usize {
+        self.len()
+    }
+}
 
 impl<'a> TryRead<'a, Str> for &'a str {
     #[inline]

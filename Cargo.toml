@@ -17,3 +17,6 @@ categories = ["no-std", "embedded", "encoding", "parsing"]
 [dev-dependencies]
 quickcheck = "0.3"
 byteorder = "1.0.0"
+
+[features]
+alloc = []

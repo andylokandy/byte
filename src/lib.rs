@@ -129,7 +129,12 @@
 #![no_std]
 #![forbid(unsafe_code)]
 
+#[cfg(feature = "alloc")]
+extern crate alloc;
+
 pub mod ctx;
+#[cfg(feature = "alloc")]
+use alloc::vec::Vec;
 use core::marker::PhantomData;
 pub use ctx::{BE, LE};
 
@@ -239,6 +244,27 @@ pub trait TryWrite<Ctx = ()> {
     /// }
     /// ```
     fn try_write(self, bytes: &mut [u8], ctx: Ctx) -> Result<usize>;
+}
+
+/// A data structure with a measurable size.
+pub trait Measure<Ctx = ()> {
+    /// Measure how many bytes will be written to a byte slice using a specific context.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use byte::*;
+    ///
+    /// pub struct HasBool(bool);
+    ///
+    /// impl Measure for HasBool {
+    ///     #[inline]
+    ///     fn measure(self, _ctx: ()) -> usize {
+    ///         1
+    ///     }
+    /// }
+    /// ```
+    fn measure(self, ctx: Ctx) -> usize;
 }
 
 /// Extension methods for byte slices.
@@ -412,6 +438,51 @@ impl<Ctx> BytesExt<Ctx> for [u8] {
             Err(Error::BadOffset(_)) => Err(Error::Incomplete),
             Err(err) => Err(err),
         }
+    }
+}
+
+#[cfg(feature = "alloc")]
+/// Extension methods for values that can be measured and serialized.
+pub trait IntoBytesExt<Ctx>: Sized + Measure<Ctx> + TryWrite<Ctx> {
+    /// Allocates a `Vec` with size based on the result of `measure()` and writes the value into it.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use byte::*;
+    ///
+    /// assert_eq!("\x01\x02\x03".into_bytes(), Ok(vec![1, 2, 3]));
+    /// ```
+    fn into_bytes(self) -> Result<Vec<u8>>
+    where
+        Ctx: Default,
+    {
+        self.into_bytes_with(Default::default())
+    }
+
+    /// Allocates a `Vec` with size based on the result of `measure()` and writes the value into it.
+    /// Expecting the context to be specified.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use byte::*;
+    ///
+    /// assert_eq!(0xFFu32.into_bytes_with(BE), Ok(vec![0, 0, 0, 0xff]));
+    /// ```
+    fn into_bytes_with(self, ctx: Ctx) -> Result<Vec<u8>>;
+}
+
+#[cfg(feature = "alloc")]
+impl<Ctx, A> IntoBytesExt<Ctx> for A
+where
+    Ctx: Copy,
+    A: Sized + Clone + Measure<Ctx> + TryWrite<Ctx>,
+{
+    fn into_bytes_with(self, ctx: Ctx) -> Result<Vec<u8>> {
+        let mut bytes = alloc::vec![0; self.clone().measure(ctx)];
+        self.try_write(&mut bytes, ctx)?;
+        Ok(bytes)
     }
 }
 
